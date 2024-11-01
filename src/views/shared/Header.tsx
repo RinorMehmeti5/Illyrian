@@ -1,164 +1,205 @@
-import React from "react";
-import {
-  Disclosure,
-  DisclosureButton,
-  DisclosurePanel,
-  Menu,
-  MenuButton,
-  MenuItem,
-  MenuItems,
-} from "@headlessui/react";
-import { Bars3Icon, BellIcon, XMarkIcon } from "@heroicons/react/24/outline";
-
-const navigation = [
-  { name: "Home", href: "#", current: true },
-  { name: "Team", href: "#", current: false },
-  { name: "Projects", href: "#", current: false },
-  { name: "Calendar", href: "#", current: false },
-];
+import React, { useState, useEffect, useRef } from "react";
+import { Button } from "primereact/button";
+import { Avatar } from "primereact/avatar";
+import { Menu } from "primereact/menu";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import axios from "axios";
 
 function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(" ");
 }
 
 interface HeaderProps {
-  setCurrentView: (view: string) => void;
-  currentView: string;
+  isAuthenticated: boolean;
+  setIsAuthenticated: (value: boolean) => void;
+  userRoles: string[];
 }
 
-export default function Header({ setCurrentView, currentView }: HeaderProps) {
-  const handleNavClick = (name: string) => {
-    setCurrentView(name);
+export default function Header({
+  isAuthenticated,
+  setIsAuthenticated,
+  userRoles,
+}: HeaderProps) {
+  const isAdmin = userRoles.some(
+    (role) => role.toLowerCase() === "administrator"
+  );
+  const [username, setUsername] = useState("");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const menu = useRef<Menu>(null);
+
+  const navigation = [
+    { name: "Home", to: "/" },
+    { name: "Team", to: "/team" },
+    { name: "Projects", to: "/projects" },
+    { name: "Calendar", to: "/calendar" },
+    ...(isAuthenticated && isAdmin
+      ? [
+          { name: "Test", to: "/test" },
+          { name: "AdminPanel", to: "/adminpanel" },
+        ]
+      : []),
+  ];
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchUsername();
+    } else {
+      setUsername("");
+    }
+  }, [isAuthenticated]);
+
+  const fetchUsername = async () => {
+    try {
+      const response = await axios.get(
+        "https://localhost:7102/api/auth/username",
+        { withCredentials: true }
+      );
+      setUsername(response.data.username);
+    } catch (error) {
+      console.error("Error fetching username:", error);
+    }
   };
 
-  return (
-    <Disclosure as="nav" className="bg-black no-scrollbar">
-      {({ open }) => (
-        <>
-          <div className="mx-auto max-w-7xl px-2 sm:px-6 lg:px-8">
-            <div className="relative flex h-20 items-center justify-between">
-              <div className="absolute inset-y-0 left-0 flex items-center sm:hidden">
-                <DisclosureButton className="group relative inline-flex items-center justify-center rounded-md p-2 text-gray-400 hover:bg-gray-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white">
-                  <span className="absolute -inset-0.5" />
-                  <span className="sr-only">Open main menu</span>
-                  {open ? (
-                    <XMarkIcon className="block h-6 w-6" aria-hidden="true" />
-                  ) : (
-                    <Bars3Icon className="block h-6 w-6" aria-hidden="true" />
-                  )}
-                </DisclosureButton>
-              </div>
-              <div className="flex flex-1 items-center justify-center sm:items-stretch sm:justify-start">
-                <div className="flex flex-shrink-0 items-center">
-                  <img
-                    className="h-20 w-auto"
-                    src="/public/photos/logo.jpg"
-                    alt="Your Company"
-                  />
-                </div>
-                <div className="hidden sm:ml-6 sm:block my-auto">
-                  <div className="flex space-x-4">
-                    {navigation.map((item) => (
-                      <a
-                        key={item.name}
-                        href={item.href}
-                        onClick={() => handleNavClick(item.name)}
-                        className={classNames(
-                          item.name === currentView
-                            ? "bg-gray-900 text-white"
-                            : "text-gray-300 hover:bg-gray-700 hover:text-white",
-                          "rounded-md px-3 py-2 text-sm font-medium"
-                        )}
-                        aria-current={
-                          item.name === currentView ? "page" : undefined
-                        }
-                      >
-                        {item.name}
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              <div className="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0">
-                <button
-                  type="button"
-                  className="relative rounded-full bg-gray-800 p-1 text-gray-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800"
-                >
-                  <span className="absolute -inset-1.5" />
-                  <span className="sr-only">View notifications</span>
-                  <BellIcon aria-hidden="true" className="h-6 w-6" />
-                </button>
+  const handleLogout = async () => {
+    try {
+      await axios.post("https://localhost:7102/api/auth/logout");
+      localStorage.removeItem("token");
+      localStorage.removeItem("userid");
+      localStorage.removeItem("role");
+      localStorage.removeItem("userlanguage");
+      delete axios.defaults.headers.common["Authorization"];
+      setIsAuthenticated(false);
+      setUsername("");
+      navigate("/");
+    } catch (error) {
+      console.error("Error logging out:", error);
+    }
+  };
 
-                {/* Profile dropdown */}
-                <Menu as="div" className="relative ml-3">
-                  <div>
-                    <MenuButton className="relative flex rounded-full bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800">
-                      <span className="absolute -inset-1.5" />
-                      <span className="sr-only">Open user menu</span>
-                      <img
-                        alt=""
-                        src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
-                        className="h-8 w-8 rounded-full"
-                      />
-                    </MenuButton>
-                  </div>
-                  <MenuItems
-                    transition
-                    className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 transition focus:outline-none data-[closed]:scale-95 data-[closed]:transform data-[closed]:opacity-0 data-[enter]:duration-100 data-[leave]:duration-75 data-[enter]:ease-out data-[leave]:ease-in"
+  const profileItems = [
+    {
+      label: username,
+      template: (item: any, options: any) => (
+        <span className="block px-4 py-2 text-sm text-gray-700">
+          {username}
+        </span>
+      ),
+    },
+    {
+      label: "Sign out",
+      command: handleLogout,
+    },
+  ];
+
+  return (
+    <header className="bg-black">
+      <div className="mx-auto max-w-7xl px-2 sm:px-6 lg:px-8">
+        <div className="relative flex h-20 items-center justify-between">
+          {/* Mobile menu button */}
+          <div className="absolute inset-y-0 left-0 flex items-center sm:hidden">
+            <Button
+              icon={mobileMenuOpen ? "pi pi-times" : "pi pi-bars"}
+              className="p-button-rounded p-button-text p-button-plain text-gray-400 hover:text-white"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label="Toggle mobile menu"
+            />
+          </div>
+          {/* Logo */}
+          <div className="flex flex-1 items-center justify-center sm:items-stretch sm:justify-start">
+            <div className="flex flex-shrink-0 items-center">
+              <img
+                className="h-20 w-auto"
+                src="/public/photos/logo.jpg"
+                alt="Your Company"
+              />
+            </div>
+            {/* Navigation Links */}
+            <div className="hidden sm:ml-6 sm:block my-auto">
+              <div className="flex space-x-4">
+                {navigation.map((item) => (
+                  <Link
+                    key={item.name}
+                    to={item.to}
+                    className={classNames(
+                      location.pathname === item.to
+                        ? "bg-gray-900 text-white"
+                        : "text-gray-300 hover:bg-gray-700 hover:text-white",
+                      "rounded-md px-3 py-2 text-sm font-medium"
+                    )}
                   >
-                    <MenuItem>
-                      <a
-                        href="#"
-                        className="block px-4 py-2 text-sm text-gray-700 data-[focus]:bg-gray-100"
-                      >
-                        Your Profile
-                      </a>
-                    </MenuItem>
-                    <MenuItem>
-                      <a
-                        href="#"
-                        className="block px-4 py-2 text-sm text-gray-700 data-[focus]:bg-gray-100"
-                      >
-                        Settings
-                      </a>
-                    </MenuItem>
-                    <MenuItem>
-                      <a
-                        href="#"
-                        className="block px-4 py-2 text-sm text-gray-700 data-[focus]:bg-gray-100"
-                      >
-                        Sign out
-                      </a>
-                    </MenuItem>
-                  </MenuItems>
-                </Menu>
+                    {item.name}
+                  </Link>
+                ))}
               </div>
             </div>
           </div>
-
-          <DisclosurePanel className="sm:hidden">
-            <div className="space-y-1 px-2 pb-3 pt-2">
-              {navigation.map((item) => (
-                <Disclosure.Button
-                  key={item.name}
-                  as="a"
-                  href={item.href}
-                  onClick={() => handleNavClick(item.name)}
-                  className={classNames(
-                    item.name === currentView
-                      ? "bg-gray-900 text-white"
-                      : "text-gray-300 hover:bg-gray-700 hover:text-white",
-                    "block rounded-md px-3 py-2 text-base font-medium"
-                  )}
-                  aria-current={item.name === currentView ? "page" : undefined}
+          {/* Notification Bell and Profile */}
+          <div className="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0 space-x-4">
+            {/* Notification Bell */}
+            <Button
+              icon="pi pi-bell"
+              className="p-button-rounded p-button-text p-button-plain text-gray-400 hover:text-white"
+              aria-label="View notifications"
+            />
+            {/* Profile dropdown or Login/Register */}
+            {isAuthenticated ? (
+              <>
+                <Menu model={profileItems} popup ref={menu} id="profile_menu" />
+                <Button
+                  className="p-button-rounded p-button-text p-button-plain"
+                  onClick={(event) => menu.current?.toggle(event)}
+                  aria-controls="profile_menu"
+                  aria-haspopup
                 >
-                  {item.name}
-                </Disclosure.Button>
-              ))}
-            </div>
-          </DisclosurePanel>
-        </>
+                  <Avatar
+                    image="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e"
+                    shape="circle"
+                  />
+                </Button>
+              </>
+            ) : (
+              <div className="flex space-x-4">
+                <Link
+                  to="/login"
+                  className="text-gray-300 hover:bg-gray-700 hover:text-white rounded-md px-3 py-2 text-sm font-medium"
+                >
+                  Login
+                </Link>
+                <Link
+                  to="/register"
+                  className="text-gray-300 hover:bg-gray-700 hover:text-white rounded-md px-3 py-2 text-sm font-medium"
+                >
+                  Register
+                </Link>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+      {/* Mobile Menu */}
+      {mobileMenuOpen && (
+        <div className="sm:hidden">
+          <div className="space-y-1 px-2 pb-3 pt-2">
+            {navigation.map((item) => (
+              <Link
+                key={item.name}
+                to={item.to}
+                className={classNames(
+                  location.pathname === item.to
+                    ? "bg-gray-900 text-white"
+                    : "text-gray-300 hover:bg-gray-700 hover:text-white",
+                  "block rounded-md px-3 py-2 text-base font-medium"
+                )}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                {item.name}
+              </Link>
+            ))}
+          </div>
+        </div>
       )}
-    </Disclosure>
+    </header>
   );
 }
