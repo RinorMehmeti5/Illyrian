@@ -28,6 +28,7 @@ function App() {
   const [userRoles, setUserRoles] = useState<string[]>([]);
   const noHeaderFooterRoutes = ["/login", "/register"];
   const location = useLocation();
+
   const shouldShowHeaderFooter = !noHeaderFooterRoutes.includes(
     location.pathname
   );
@@ -63,11 +64,15 @@ function App() {
 
   // Only render the app after authentication status is known
   if (isAuthenticated === null) {
-    return null; // Or a loading spinner
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <span className="text-gray-500">Loading...</span>
+      </div>
+    ); // Or a loading spinner
   }
 
   return (
-    <>
+    <div className="flex flex-col min-h-screen">
       <Toast />
       {shouldShowHeaderFooter && (
         <Header
@@ -76,7 +81,7 @@ function App() {
           userRoles={userRoles}
         />
       )}
-      <main className="flex-grow no-scrollbar">
+      <main className="flex-grow">
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/team" element={<Team />} />
@@ -113,7 +118,7 @@ function App() {
         </Routes>
       </main>
       {shouldShowHeaderFooter && <Footer />}
-    </>
+    </div>
   );
 }
 
