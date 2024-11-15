@@ -15,8 +15,8 @@ import { jwtDecode, JwtPayload } from "jwt-decode";
 import ProtectedRoute from "../components/ui/ProtectedRoute";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import AdminPanel from "./views/AdminPanel";
-import { Toast } from "primereact/toast";
-
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 interface MyJwtPayload extends JwtPayload {
   "http://schemas.microsoft.com/ws/2008/06/identity/claims/role":
     | string
@@ -73,7 +73,7 @@ function App() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <Toast />
+      <ToastContainer />
       {shouldShowHeaderFooter && (
         <Header
           isAuthenticated={isAuthenticated}

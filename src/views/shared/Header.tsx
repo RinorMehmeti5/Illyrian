@@ -1,11 +1,18 @@
 // Header.tsx
-import React, { useState, useEffect } from "react";
-import { Menubar } from "primereact/menubar";
-import { Avatar } from "primereact/avatar";
-import { Menu } from "primereact/menu";
+import React, { useState, useEffect, Fragment } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
-import { Button } from "primereact/button";
+import { Menu, Transition } from "@headlessui/react";
+import {
+  BellIcon,
+  UserIcon,
+  HomeIcon,
+  UsersIcon,
+  BriefcaseIcon,
+  CalendarIcon,
+  CogIcon,
+  ShieldCheckIcon,
+} from "@heroicons/react/24/outline";
 
 interface HeaderProps {
   isAuthenticated: boolean;
@@ -21,36 +28,22 @@ const Header: React.FC<HeaderProps> = ({
   const navigate = useNavigate();
   const location = useLocation();
   const [username, setUsername] = useState("");
-  const menu = React.useRef<Menu>(null);
 
   const isAdmin = userRoles.some(
     (role) => role.toLowerCase() === "administrator"
   );
 
   const navigation = [
-    { label: "Home", icon: "pi pi-home", to: "/" },
-    { label: "Team", icon: "pi pi-users", to: "/team" },
-    { label: "Projects", icon: "pi pi-briefcase", to: "/projects" },
-    { label: "Calendar", icon: "pi pi-calendar", to: "/calendar" },
+    { name: "Home", icon: HomeIcon, to: "/" },
+    { name: "Team", icon: UsersIcon, to: "/team" },
+    { name: "Projects", icon: BriefcaseIcon, to: "/projects" },
+    { name: "Calendar", icon: CalendarIcon, to: "/calendar" },
     ...(isAuthenticated && isAdmin
       ? [
-          { label: "Test", icon: "pi pi-cog", to: "/test" },
-          { label: "AdminPanel", icon: "pi pi-shield", to: "/adminpanel" },
+          { name: "Test", icon: CogIcon, to: "/test" },
+          { name: "AdminPanel", icon: ShieldCheckIcon, to: "/adminpanel" },
         ]
       : []),
-  ];
-
-  const profileItems = [
-    {
-      label: username,
-      icon: "pi pi-user",
-      command: () => {},
-    },
-    {
-      label: "Sign Out",
-      icon: "pi pi-sign-out",
-      command: () => handleLogout(),
-    },
   ];
 
   useEffect(() => {
@@ -89,59 +82,116 @@ const Header: React.FC<HeaderProps> = ({
     }
   };
 
-  const start = (
-    <Link to="/">
-      <img
-        src="/public/photos/logo.jpg"
-        alt="Your Company"
-        className="h-12 w-auto"
-      />
-    </Link>
-  );
-
-  const end = isAuthenticated ? (
-    <>
-      <Button
-        icon="pi pi-bell"
-        className="p-button-text p-button-rounded mr-2"
-        aria-label="Notifications"
-      />
-      <Button
-        label={username}
-        icon="pi pi-user"
-        className="p-button-text p-button-rounded"
-        onClick={(e) => menu.current?.toggle(e)}
-        aria-controls="profile_menu"
-        aria-haspopup
-      />
-      <Menu model={profileItems} popup ref={menu} id="profile_menu" />
-    </>
-  ) : (
-    <>
-      <Link to="/login" className="p-button p-component p-button-text mr-2">
-        Login
-      </Link>
-      <Link to="/register" className="p-button p-component p-button-text">
-        Register
-      </Link>
-    </>
-  );
-
-  const onMenuItemClick = (item: any) => {
-    // Handle menu item clicks if necessary
-  };
-
   return (
-    <Menubar
-      model={navigation.map((item) => ({
-        label: item.label,
-        icon: item.icon,
-        command: () => navigate(item.to),
-      }))}
-      start={start}
-      end={end}
-      className="bg-black text-white"
-    />
+    <nav className="bg-black text-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16">
+          {/* Logo */}
+          <div className="flex-shrink-0">
+            <Link to="/">
+              <img
+                src="/public/photos/logo.jpg"
+                alt="Your Company"
+                className="h-8 w-auto"
+              />
+            </Link>
+          </div>
+          {/* Navigation Links */}
+          <div className="hidden md:flex space-x-4">
+            {navigation.map((item) => (
+              <Link
+                key={item.name}
+                to={item.to}
+                className={`flex items-center px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700 ${
+                  location.pathname === item.to ? "bg-gray-900" : ""
+                }`}
+              >
+                <item.icon className="h-5 w-5 mr-1" aria-hidden="true" />
+                {item.name}
+              </Link>
+            ))}
+          </div>
+          {/* User Controls */}
+          <div className="flex items-center">
+            {isAuthenticated ? (
+              <>
+                {/* Notifications Button */}
+                <button
+                  className="p-1 rounded-full text-gray-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white"
+                  aria-label="Notifications"
+                >
+                  <BellIcon className="h-6 w-6" aria-hidden="true" />
+                </button>
+                {/* Profile Dropdown */}
+                <Menu as="div" className="ml-3 relative">
+                  <div>
+                    <Menu.Button className="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white">
+                      <span className="sr-only">Open user menu</span>
+                      <UserIcon
+                        className="h-6 w-6 text-gray-400 hover:text-white"
+                        aria-hidden="true"
+                      />
+                      <span className="ml-2 text-white">{username}</span>
+                    </Menu.Button>
+                  </div>
+                  <Transition
+                    as={Fragment}
+                    enter="transition ease-out duration-100"
+                    enterFrom="transform opacity-0 scale-95"
+                    enterTo="transform opacity-100 scale-100"
+                    leave="transition ease-in duration-75"
+                    leaveFrom="transform opacity-100 scale-100"
+                    leaveTo="transform opacity-0 scale-95"
+                  >
+                    <Menu.Items className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
+                      {/* Username Display */}
+                      <Menu.Item>
+                        {({ active }) => (
+                          <div
+                            className={`block px-4 py-2 text-sm text-gray-700 ${
+                              active ? "bg-gray-100" : ""
+                            }`}
+                          >
+                            Signed in as <strong>{username}</strong>
+                          </div>
+                        )}
+                      </Menu.Item>
+                      <Menu.Item>
+                        {({ active }) => (
+                          <button
+                            onClick={handleLogout}
+                            className={`block w-full text-left px-4 py-2 text-sm text-gray-700 ${
+                              active ? "bg-gray-100" : ""
+                            }`}
+                          >
+                            Sign Out
+                          </button>
+                        )}
+                      </Menu.Item>
+                    </Menu.Items>
+                  </Transition>
+                </Menu>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  className="px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700"
+                >
+                  Login
+                </Link>
+                <Link
+                  to="/register"
+                  className="ml-2 px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700"
+                >
+                  Register
+                </Link>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    </nav>
   );
 };
 
