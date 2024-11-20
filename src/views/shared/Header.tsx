@@ -14,20 +14,28 @@ import {
   ShieldCheckIcon,
 } from "@heroicons/react/24/outline";
 
-interface HeaderProps {
-  isAuthenticated: boolean;
-  setIsAuthenticated: (value: boolean) => void;
-  userRoles: string[];
-}
+import { useTranslation } from "react-i18next";
+import useAuthStore from "../../store/authStore";
+import AuthService from "../../services/AuthService";
 
-const Header: React.FC<HeaderProps> = ({
-  isAuthenticated,
-  setIsAuthenticated,
-  userRoles,
-}) => {
+const Header: React.FC = () => {
+  const { isAuthenticated, userRoles, setAuthenticated } = useAuthStore();
+  const { t, i18n } = useTranslation();
+  const setToken = useAuthStore((state) => state.setToken);
+
   const navigate = useNavigate();
   const location = useLocation();
   const [username, setUsername] = useState("");
+
+  const changeLanguage = (lng: string) => {
+    i18n.changeLanguage(lng);
+    localStorage.setItem("language", lng);
+  };
+
+  useEffect(() => {
+    const language = localStorage.getItem("language") || "en";
+    i18n.changeLanguage(language);
+  }, []);
 
   const isAdmin = userRoles.some(
     (role) => role.toLowerCase() === "administrator"
@@ -68,14 +76,9 @@ const Header: React.FC<HeaderProps> = ({
 
   const handleLogout = async () => {
     try {
-      await axios.post("https://localhost:7102/api/auth/logout");
+      await AuthService.logout();
       localStorage.removeItem("token");
-      localStorage.removeItem("userid");
-      localStorage.removeItem("role");
-      localStorage.removeItem("userlanguage");
-      delete axios.defaults.headers.common["Authorization"];
-      setIsAuthenticated(false);
-      setUsername("");
+      setToken(null);
       navigate("/");
     } catch (error) {
       console.error("Error logging out:", error);
@@ -111,6 +114,8 @@ const Header: React.FC<HeaderProps> = ({
               </Link>
             ))}
           </div>
+          <button onClick={() => changeLanguage("en")}>EN</button>
+          <button onClick={() => changeLanguage("sq")}>SQ</button>
           {/* User Controls */}
           <div className="flex items-center">
             {isAuthenticated ? (

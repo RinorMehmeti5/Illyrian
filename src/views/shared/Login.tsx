@@ -1,18 +1,13 @@
 import React, { useState } from "react";
 import axios from "axios";
-import { jwtDecode, JwtPayload } from "jwt-decode";
 import { useNavigate } from "react-router-dom";
+import AuthService from "../../services/AuthService";
 
-interface MyJwtPayload extends JwtPayload {
-  "http://schemas.microsoft.com/ws/2008/06/identity/claims/role":
-    | string
-    | string[];
-}
-interface LoginProps {
-  onLoginSuccess: (roles: string[]) => void;
-}
+import useAuthStore from "../../store/authStore";
 
-const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
+const Login: React.FC = () => {
+  const setToken = useAuthStore((state) => state.setToken);
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -21,33 +16,11 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await axios.post(
-        "https://localhost:7102/api/auth/login",
-        { email, password },
-        { withCredentials: true }
-      );
+      const response = await AuthService.login(email, password);
       const { token } = response.data;
-      const { userid } = response.data;
-      const { userrole } = response.data;
       localStorage.setItem("token", token);
-      localStorage.setItem("userid", userid);
-      localStorage.setItem("role", userrole);
-      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-
-      const decodedToken = jwtDecode<MyJwtPayload>(token);
-      const rolesClaim =
-        decodedToken[
-          "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
-        ];
-      const userRoles = rolesClaim
-        ? Array.isArray(rolesClaim)
-          ? rolesClaim
-          : [rolesClaim]
-        : [];
-
-      onLoginSuccess(userRoles);
+      setToken(token);
       navigate("/");
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       setError("Invalid email or password");
     }

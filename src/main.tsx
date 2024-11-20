@@ -5,6 +5,7 @@ import App from "./App";
 import "./index.css";
 import { BrowserRouter, useLocation } from "react-router-dom";
 import "preline/preline"; // Ensure correct import
+import "./i18n";
 
 // Extend the Window interface to include HSStaticMethods
 declare global {
