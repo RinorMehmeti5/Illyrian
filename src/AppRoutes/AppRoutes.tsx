@@ -5,29 +5,32 @@ import Home from "../views/Home";
 import Team from "../views/Team";
 import Projects from "../views/Projects";
 import Calendar from "../views/Calendar";
-import Test from "../views/Test";
 import Login from "../views/shared/Login";
 import Register from "../views/shared/Register";
-import AdminPanel from "../views/AdminPanel";
+import AdminLayout from "../../components/layouts/AdminLayout";
+import AdminDashboard from "../views/admin/AdminDashboard";
+import AdminUsers from "../views/admin/AdminUsers";
+import useAuthStore from "../store/authStore";
+import Test from "../views/Test";
 import ProtectedRoute from "../../components/ui/ProtectedRoute";
 
-interface AppRoutesProps {
-  isAuthenticated: boolean;
-  userRoles: string[];
-  handleLoginSuccess: (roles: string[]) => void;
-}
+import AdminRoute from "../../components/ui/AdminRoute";
 
-const AppRoutes: React.FC<AppRoutesProps> = ({
-  isAuthenticated,
-  userRoles,
-  handleLoginSuccess,
-}) => {
+const AppRoutes: React.FC = () => {
+  const { isAuthenticated, userRoles } = useAuthStore();
+  const isAdmin = userRoles.includes("Administrator");
+
   return (
     <Routes>
+      {/* Public Routes */}
       <Route path="/" element={<Home />} />
       <Route path="/team" element={<Team />} />
       <Route path="/projects" element={<Projects />} />
       <Route path="/calendar" element={<Calendar />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+
+      {/* Protected Routes */}
       <Route
         path="/test"
         element={
@@ -39,19 +42,19 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
           />
         }
       />
-      <Route
-        path="/adminpanel"
-        element={
-          <ProtectedRoute
-            component={AdminPanel}
-            isAuthenticated={isAuthenticated}
-            userRoles={userRoles}
-            requiredRoles={["Administrator"]}
-          />
-        }
-      />
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
+
+      {/* Admin Routes */}
+      {isAdmin && (
+        <Route element={<AdminRoute />}>
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route path="dashboard" element={<AdminDashboard />} />
+            <Route path="users" element={<AdminUsers />} />
+            {/* Add more admin routes here */}
+          </Route>
+        </Route>
+      )}
+
+      {/* Redirects */}
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>
   );

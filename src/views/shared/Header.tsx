@@ -46,12 +46,6 @@ const Header: React.FC = () => {
     { name: "Team", icon: UsersIcon, to: "/team" },
     { name: "Projects", icon: BriefcaseIcon, to: "/projects" },
     { name: "Calendar", icon: CalendarIcon, to: "/calendar" },
-    ...(isAuthenticated && isAdmin
-      ? [
-          { name: "Test", icon: CogIcon, to: "/test" },
-          { name: "AdminPanel", icon: ShieldCheckIcon, to: "/adminpanel" },
-        ]
-      : []),
   ];
 
   useEffect(() => {
