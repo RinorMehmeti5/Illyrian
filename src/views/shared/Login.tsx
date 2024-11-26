@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import AuthService from "../../services/AuthService";
 
 import useAuthStore from "../../store/authStore";
+import { extractRolesFromToken } from "../../utils/authHelpers";
 
 const Login: React.FC = () => {
   const setToken = useAuthStore((state) => state.setToken);
@@ -20,7 +21,14 @@ const Login: React.FC = () => {
       const { token } = response.data;
       localStorage.setItem("token", token);
       setToken(token);
-      navigate("/");
+      // Extract roles directly from the token
+      const { roles } = extractRolesFromToken(token);
+
+      if (roles.includes("Administrator")) {
+        navigate("/admin/dashboard");
+      } else {
+        navigate("/");
+      }
     } catch (error) {
       setError("Invalid email or password");
     }

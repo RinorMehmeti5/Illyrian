@@ -18,7 +18,6 @@ import AdminRoute from "../../components/ui/AdminRoute";
 
 const AppRoutes: React.FC = () => {
   const { isAuthenticated, userRoles } = useAuthStore();
-  const isAdmin = userRoles.includes("Administrator");
 
   return (
     <Routes>
@@ -44,15 +43,13 @@ const AppRoutes: React.FC = () => {
       />
 
       {/* Admin Routes */}
-      {isAdmin && (
-        <Route element={<AdminRoute />}>
-          <Route path="/admin" element={<AdminLayout />}>
-            <Route path="dashboard" element={<AdminDashboard />} />
-            <Route path="users" element={<AdminUsers />} />
-            {/* Add more admin routes here */}
-          </Route>
+      <Route element={<AdminRoute />}>
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route path="dashboard" element={<AdminDashboard />} />
+          <Route path="users" element={<AdminUsers />} />
+          {/* Add more admin routes here */}
         </Route>
-      )}
+      </Route>
 
       {/* Redirects */}
       <Route path="*" element={<Navigate to="/" />} />

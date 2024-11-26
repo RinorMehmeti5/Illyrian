@@ -29,9 +29,9 @@ function App() {
     }
   }, [setAuthenticated, setUserRoles, setToken]);
 
-  const shouldShowHeaderFooter = !["/login", "/register"].includes(
-    location.pathname
-  );
+  const shouldShowHeaderFooter =
+    !["/login", "/register"].includes(location.pathname) &&
+    !location.pathname.startsWith("/admin");
 
   return (
     <div className="flex flex-col min-h-screen">
