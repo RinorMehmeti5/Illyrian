@@ -9,25 +9,8 @@ import Header from "./views/shared/Header";
 import Footer from "./views/shared/Footer";
 
 function App() {
-  const {
-    isAuthenticated,
-    setAuthenticated,
-    userRoles,
-    setUserRoles,
-    setToken,
-  } = useAuthStore();
-
+  const { userRoles } = useAuthStore();
   const location = useLocation();
-
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      setToken(token);
-    } else {
-      setAuthenticated(false);
-      setUserRoles([]);
-    }
-  }, [setAuthenticated, setUserRoles, setToken]);
 
   const shouldShowHeaderFooter =
     !["/login", "/register"].includes(location.pathname) &&

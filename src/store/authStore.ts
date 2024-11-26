@@ -12,10 +12,23 @@ interface AuthState {
   logout: () => void;
 }
 
+// Initialize authentication state based on token in localStorage
+const initialToken = localStorage.getItem("token");
+let initialIsAuthenticated = false;
+let initialUserRoles: string[] = [];
+let initialUsername = "";
+
+if (initialToken) {
+  const { roles, username } = extractRolesFromToken(initialToken);
+  initialIsAuthenticated = true;
+  initialUserRoles = roles;
+  initialUsername = username;
+}
+
 const useAuthStore = create<AuthState>((set) => ({
-  isAuthenticated: false,
-  userRoles: [],
-  username: "",
+  isAuthenticated: initialIsAuthenticated,
+  userRoles: initialUserRoles,
+  username: initialUsername,
   setAuthenticated: (isAuthenticated) => set({ isAuthenticated }),
   setUserRoles: (roles: string[]) => set({ userRoles: roles }),
   setToken: (token: string | null) => {
