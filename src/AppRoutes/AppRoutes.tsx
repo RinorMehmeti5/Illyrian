@@ -21,7 +21,6 @@ const AppRoutes: React.FC = () => {
 
   return (
     <Routes>
-      {/* Public Routes */}
       <Route path="/" element={<Home />} />
       <Route path="/team" element={<Team />} />
       <Route path="/projects" element={<Projects />} />
@@ -29,7 +28,6 @@ const AppRoutes: React.FC = () => {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
 
-      {/* Protected Routes */}
       <Route
         path="/test"
         element={
@@ -42,16 +40,13 @@ const AppRoutes: React.FC = () => {
         }
       />
 
-      {/* Admin Routes */}
       <Route element={<AdminRoute />}>
         <Route path="/admin" element={<AdminLayout />}>
           <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="users" element={<AdminUsers />} />
-          {/* Add more admin routes here */}
         </Route>
       </Route>
 
-      {/* Redirects */}
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>
   );

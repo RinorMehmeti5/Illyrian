@@ -1,4 +1,3 @@
-// src/services/AuthService.ts
 import apiClient from "./BaseService";
 
 interface LoginResponse {

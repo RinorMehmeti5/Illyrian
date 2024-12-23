@@ -1,17 +1,13 @@
 // src/views/shared/Header.tsx
+
 import React, { useState, useEffect, Fragment } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import axios from "axios";
 import { Menu, Transition } from "@headlessui/react";
 import {
-  BellIcon,
-  UserIcon,
-  HomeIcon,
   UsersIcon,
   BriefcaseIcon,
   CalendarIcon,
-  CogIcon,
-  ShieldCheckIcon,
+  HomeIcon,
 } from "@heroicons/react/24/outline";
 
 import { useTranslation } from "react-i18next";
@@ -23,17 +19,10 @@ const USA_FLAG = "https://flagcdn.com/us.svg"; // Example URL for USA flag
 const ALB_FLAG = "https://flagcdn.com/al.svg"; // Example URL for Albania flag
 
 const Header: React.FC = () => {
-  const {
-    isAuthenticated,
-    userRoles,
-    setAuthenticated,
-    setUserRoles,
-    setToken,
-  } = useAuthStore();
-  const { t, i18n } = useTranslation();
+  const { isAuthenticated, userRoles, username, setToken } = useAuthStore();
+  const { i18n } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
-  const [username, setUsername] = useState("");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const changeLanguage = (lng: string) => {
@@ -46,36 +35,12 @@ const Header: React.FC = () => {
     i18n.changeLanguage(language);
   }, [i18n]);
 
-  const isAdmin = userRoles.some(
-    (role) => role.toLowerCase() === "administrator"
-  );
-
   const navigation = [
     { name: "Home", icon: HomeIcon, to: "/" },
     { name: "Team", icon: UsersIcon, to: "/team" },
     { name: "Projects", icon: BriefcaseIcon, to: "/projects" },
     { name: "Calendar", icon: CalendarIcon, to: "/calendar" },
   ];
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchUsername();
-    } else {
-      setUsername("");
-    }
-  }, [isAuthenticated]);
-
-  const fetchUsername = async () => {
-    try {
-      const response = await axios.get(
-        "https://localhost:7102/api/auth/username",
-        { withCredentials: true }
-      );
-      setUsername(response.data.username);
-    } catch (error) {
-      console.error("Error fetching username:", error);
-    }
-  };
 
   const handleLogout = async () => {
     try {
@@ -89,35 +54,174 @@ const Header: React.FC = () => {
   };
 
   return (
-    <header className="sticky top-4 inset-x-0 flex flex-wrap md:justify-start md:flex-nowrap z-50 w-full before:absolute before:inset-0 before:max-w-[66rem] before:mx-2 before:lg:mx-auto before:rounded-[26px] before:bg-black before:backdrop-blur-md">
-      <nav className="relative max-w-[66rem] w-full py-1 ps-5 pe-2 md:flex md:items-center md:justify-between md:py-0 mx-2 lg:mx-auto">
-        <div className="flex items-center justify-between w-full">
+    <header className="flex flex-wrap md:justify-start md:flex-nowrap z-50 w-full py-7">
+      <nav className="relative max-w-7xl w-full flex flex-wrap md:grid md:grid-cols-12 basis-full items-center px-4 md:px-6 md:px-8 mx-auto">
+        <div className="md:col-span-3">
           {/* Logo */}
           <Link
+            className="flex-none rounded-xl text-xl inline-block font-semibold focus:outline-none focus:opacity-80"
             to="/"
-            className="flex-none rounded-md text-xl inline-block font-semibold focus:outline-none focus:opacity-80"
-            aria-label="Preline"
+            aria-label="Your Company"
           >
             {/* Replace the SVG with your logo or keep it as needed */}
             <img
               src="/public/photos/LOGOO.png"
               alt="Your Company"
-              className="h-12"
+              className="h-20"
             />
           </Link>
-          {/* Mobile Menu Button */}
+          {/* End Logo */}
+        </div>
+
+        {/* Button Group */}
+        <div className="flex items-center gap-x-1 md:gap-x-2 ms-auto py-1 md:ps-6 md:order-3 md:col-span-3">
+          {isAuthenticated ? (
+            <>
+              {/* Profile Dropdown */}
+              <Menu as="div" className="relative">
+                <div>
+                  <Menu.Button className="flex items-center text-sm rounded-full focus:outline-none">
+                    <UsersIcon
+                      className="h-6 w-6 text-gray-400"
+                      aria-hidden="true"
+                    />
+                    <span className="ml-2">{username}</span>
+                  </Menu.Button>
+                </div>
+                <Transition
+                  as={Fragment}
+                  enter="transition ease-out duration-100"
+                  enterFrom="transform opacity-0 scale-95"
+                  enterTo="transform opacity-100 scale-100"
+                  leave="transition ease-in duration-75"
+                  leaveFrom="transform opacity-100 scale-100"
+                  leaveTo="transform opacity-0 scale-95"
+                >
+                  <Menu.Items className="absolute right-0 mt-2 w-48 bg-white text-black rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                    <Menu.Item>
+                      {({ active }) => (
+                        <div
+                          className={`block px-4 py-2 text-sm text-gray-700 ${
+                            active ? "bg-gray-100" : ""
+                          }`}
+                        >
+                          Signed in as <strong>{username}</strong>
+                        </div>
+                      )}
+                    </Menu.Item>
+                    <Menu.Item>
+                      {({ active }) => (
+                        <button
+                          onClick={handleLogout}
+                          className={`block w-full text-left px-4 py-2 text-sm text-gray-700 ${
+                            active ? "bg-gray-100" : ""
+                          }`}
+                        >
+                          Sign Out
+                        </button>
+                      )}
+                    </Menu.Item>
+                  </Menu.Items>
+                </Transition>
+              </Menu>
+            </>
+          ) : (
+            <>
+              <Link
+                to="/login"
+                className="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-xl bg-white border border-gray-200 text-black hover:bg-gray-100 focus:outline-none focus:bg-gray-100"
+              >
+                Sign in
+              </Link>
+              <Link
+                to="/register"
+                className="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-xl border border-transparent bg-lime-400 text-black hover:bg-lime-500 focus:outline-none focus:bg-lime-500 transition"
+              >
+                Register
+              </Link>
+            </>
+          )}
+
+          {/* Language Dropdown */}
+          <div className="hs-dropdown relative inline-flex">
+            <button
+              id="hs-dropdown-language"
+              type="button"
+              className="hs-dropdown-toggle py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-xl bg-white border border-gray-200 text-black hover:bg-gray-100 focus:outline-none focus:bg-gray-100"
+            >
+              {/* Display the current language flag */}
+              <img
+                src={i18n.language === "en" ? USA_FLAG : ALB_FLAG}
+                alt={i18n.language === "en" ? "English" : "Shqip"}
+                className="w-6 h-6 rounded-full"
+              />
+              {/* Optionally display the language code */}
+              {/* <span>{i18n.language.toUpperCase()}</span> */}
+              <svg
+                className="hs-dropdown-open:rotate-180 size-4 transition-transform duration-300"
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="m6 9 6 6 6-6" />
+              </svg>
+            </button>
+
+            <div
+              className="hs-dropdown-menu transition-opacity duration-150 hs-dropdown-open:opacity-100 opacity-0 hidden min-w-60 bg-white shadow-md rounded-lg mt-2"
+              role="menu"
+              aria-orientation="vertical"
+              aria-labelledby="hs-dropdown-language"
+            >
+              <div className="p-1 space-y-1">
+                <button
+                  onClick={() => changeLanguage("en")}
+                  className="flex items-center gap-x-2 py-2 px-3 rounded-lg text-sm text-gray-800 hover:bg-gray-100 focus:outline-none w-full text-left"
+                >
+                  <img
+                    src={USA_FLAG}
+                    alt="English"
+                    className="w-5 h-5 rounded-full"
+                  />
+                  English (EN)
+                </button>
+                <button
+                  onClick={() => changeLanguage("sq")}
+                  className="flex items-center gap-x-2 py-2 px-3 rounded-lg text-sm text-gray-800 hover:bg-gray-100 focus:outline-none w-full text-left"
+                >
+                  <img
+                    src={ALB_FLAG}
+                    alt="Shqip"
+                    className="w-5 h-5 rounded-full"
+                  />
+                  Shqip (SQ)
+                </button>
+              </div>
+            </div>
+          </div>
+          {/* End Language Dropdown */}
+
           <div className="md:hidden">
             <button
               type="button"
-              className="hs-collapse-toggle size-8 flex justify-center items-center text-sm font-semibold rounded-full bg-neutral-800 text-white disabled:opacity-50 disabled:pointer-events-none"
-              id="hs-navbar-floating-dark-collapse"
-              aria-expanded="false"
-              aria-controls="hs-navbar-floating-dark"
+              className="hs-collapse-toggle size-[38px] flex justify-center items-center text-sm font-semibold rounded-xl border border-gray-200 text-black hover:bg-gray-100 focus:outline-none focus:bg-gray-100"
+              id="hs-navbar-hcail-collapse"
+              aria-expanded={isMobileMenuOpen}
+              aria-controls="hs-navbar-hcail"
               aria-label="Toggle navigation"
-              data-hs-collapse="#hs-navbar-floating-dark"
+              data-hs-collapse="#hs-navbar-hcail"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             >
               <svg
-                className="hs-collapse-open:hidden shrink-0 size-4"
+                className={`${
+                  isMobileMenuOpen ? "hidden" : "block"
+                } hs-collapse-open:hidden shrink-0 size-4`}
                 xmlns="http://www.w3.org/2000/svg"
                 width="24"
                 height="24"
@@ -133,7 +237,9 @@ const Header: React.FC = () => {
                 <line x1="3" x2="21" y1="18" y2="18" />
               </svg>
               <svg
-                className="hs-collapse-open:block hidden shrink-0 size-4"
+                className={`${
+                  isMobileMenuOpen ? "block" : "hidden"
+                } hs-collapse-open:block hidden shrink-0 size-4`}
                 xmlns="http://www.w3.org/2000/svg"
                 width="24"
                 height="24"
@@ -150,177 +256,34 @@ const Header: React.FC = () => {
             </button>
           </div>
         </div>
+        {/* End Button Group */}
 
         {/* Collapse */}
         <div
-          id="hs-navbar-floating-dark"
-          className="hs-collapse hidden overflow-hidden transition-all duration-300 basis-full grow md:block"
-          aria-labelledby="hs-navbar-floating-dark-collapse"
+          id="hs-navbar-hcail"
+          className={`hs-collapse transition-all duration-300 basis-full grow md:block md:w-auto md:basis-auto md:order-2 md:col-span-6 ${
+            isMobileMenuOpen ? "block" : "hidden"
+          }`}
+          aria-labelledby="hs-navbar-hcail-collapse"
         >
-          <div className="flex flex-col md:flex-row md:items-center md:justify-end py-2 md:py-0 md:ps-7 space-y-2 md:space-y-0">
+          <div className="flex flex-col gap-y-4 gap-x-0 mt-5 md:flex-row md:justify-center md:items-center md:gap-y-0 md:gap-x-7 md:mt-0">
             {navigation.map((item) => (
-              <Link
-                key={item.name}
-                to={item.to}
-                className={`py-2 ps-px sm:px-3   md:py-2 text-sm text-white hover:text-neutral-300 focus:outline-none focus:text-neutral-300 rounded-full ${
-                  location.pathname === item.to ? "bg-gray-700" : ""
-                }`}
-                aria-current={
-                  location.pathname === item.to ? "page" : undefined
-                }
-              >
-                {/* <item.icon className="h-5 w-5 mr-1" aria-hidden="true" /> */}
-                {item.name}
-              </Link>
-            ))}
-
-            {/* Language Dropdown */}
-            {/* Updated Language Dropdown */}
-            <div className="hs-dropdown relative inline-flex">
-              <button
-                id="hs-dropdown-language"
-                type="button"
-                className="hs-dropdown-toggle py-1 ps-1 pe-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-full border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 focus:outline-none focus:bg-gray-50 dark:bg-neutral-900 dark:border-neutral-700 dark:text-white dark:hover:bg-neutral-800 dark:focus:bg-neutral-800"
-                aria-haspopup="menu"
-                aria-expanded="false"
-                aria-label="Language Dropdown"
-              >
-                {/* Display the current language flag */}
-                <img
-                  src={i18n.language === "en" ? USA_FLAG : ALB_FLAG}
-                  alt={i18n.language === "en" ? "English" : "Shqip"}
-                  className="w-6 h-6 rounded-full"
-                />
-                {/* Optionally display the language code */}
-                {/* <span className="sr-only">Select Language</span> */}
-                <svg
-                  className="hs-dropdown-open:rotate-180 size-4 transition-transform duration-300"
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
+              <div key={item.name}>
+                <Link
+                  className={`relative inline-block text-white focus:outline-none ${
+                    location.pathname === item.to
+                      ? "before:absolute before:bottom-0.5 before:start-0 before:-z-[1] before:w-full before:h-1 before:bg-lime-400"
+                      : "hover:text-gray-600"
+                  }`}
+                  to={item.to}
+                  aria-current={
+                    location.pathname === item.to ? "page" : undefined
+                  }
                 >
-                  <path d="m6 9 6 6 6-6" />
-                </svg>
-              </button>
-
-              <div
-                className="hs-dropdown-menu transition-opacity duration-150 hs-dropdown-open:opacity-100 opacity-0 hidden min-w-60 bg-white shadow-md rounded-lg mt-2 dark:bg-neutral-800 dark:border dark:border-neutral-700"
-                role="menu"
-                aria-orientation="vertical"
-                aria-labelledby="hs-dropdown-language"
-              >
-                <div className="p-1 space-y-0.5">
-                  <button
-                    onClick={() => changeLanguage("en")}
-                    className="flex items-center gap-x-3.5 py-2 px-3 rounded-lg text-sm text-gray-800 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 dark:text-neutral-400 dark:hover:bg-neutral-700 dark:hover:text-neutral-300 dark:focus:bg-neutral-700 w-full text-left"
-                  >
-                    <img
-                      src={USA_FLAG}
-                      alt="English"
-                      className="w-5 h-5 rounded-full"
-                    />
-                    English (EN)
-                  </button>
-                  <button
-                    onClick={() => changeLanguage("sq")}
-                    className="flex items-center gap-x-3.5 py-2 px-3 rounded-lg text-sm text-gray-800 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 dark:text-neutral-400 dark:hover:bg-neutral-700 dark:hover:text-neutral-300 dark:focus:bg-neutral-700 w-full text-left"
-                  >
-                    <img
-                      src={ALB_FLAG}
-                      alt="Shqip"
-                      className="w-5 h-5 rounded-full"
-                    />
-                    Shqip (SQ)
-                  </button>
-                </div>
+                  {item.name}
+                </Link>
               </div>
-            </div>
-            {/* End Updated Language Dropdown */}
-
-            {/* User Controls */}
-            <div className="flex items-center space-x-2">
-              {isAuthenticated ? (
-                <>
-                  {/* Notifications Button */}
-                  <button
-                    className="p-1 rounded-full text-gray-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white"
-                    aria-label="Notifications"
-                  >
-                    <BellIcon className="h-6 w-6" aria-hidden="true" />
-                  </button>
-                  {/* Profile Dropdown */}
-                  <Menu as="div" className="relative">
-                    <div>
-                      <Menu.Button className="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white">
-                        <span className="sr-only">Open user menu</span>
-                        <UserIcon
-                          className="h-6 w-6 text-gray-400 hover:text-white"
-                          aria-hidden="true"
-                        />
-                        <span className="ml-2 text-white">{username}</span>
-                      </Menu.Button>
-                    </div>
-                    <Transition
-                      as={Fragment}
-                      enter="transition ease-out duration-100"
-                      enterFrom="transform opacity-0 scale-95"
-                      enterTo="transform opacity-100 scale-100"
-                      leave="transition ease-in duration-75"
-                      leaveFrom="transform opacity-100 scale-100"
-                      leaveTo="transform opacity-0 scale-95"
-                    >
-                      <Menu.Items className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
-                        {/* Username Display */}
-                        <Menu.Item>
-                          {({ active }) => (
-                            <div
-                              className={`block px-4 py-2 text-sm text-gray-700 ${
-                                active ? "bg-gray-100" : ""
-                              }`}
-                            >
-                              Signed in as <strong>{username}</strong>
-                            </div>
-                          )}
-                        </Menu.Item>
-                        <Menu.Item>
-                          {({ active }) => (
-                            <button
-                              onClick={handleLogout}
-                              className={`block w-full text-left px-4 py-2 text-sm text-gray-700 ${
-                                active ? "bg-gray-100" : ""
-                              }`}
-                            >
-                              Sign Out
-                            </button>
-                          )}
-                        </Menu.Item>
-                      </Menu.Items>
-                    </Transition>
-                  </Menu>
-                </>
-              ) : (
-                <>
-                  <Link
-                    to="/login"
-                    className="px-3 py-2 rounded-full text-sm font-medium text-white bg-amber-500	hover:bg-gray-700"
-                  >
-                    Login
-                  </Link>
-                  <Link
-                    to="/register"
-                    className="ml-2 px-3 py-2 rounded-full text-sm font-medium text-white bg-amber-500 hover:bg-gray-700"
-                  >
-                    Register
-                  </Link>
-                </>
-              )}
-            </div>
+            ))}
           </div>
         </div>
         {/* End Collapse */}

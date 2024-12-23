@@ -1,4 +1,3 @@
-// src/views/shared/Unauthorized.tsx
 import React from "react";
 
 const Unauthorized: React.FC = () => {

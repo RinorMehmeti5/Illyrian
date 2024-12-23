@@ -1,4 +1,3 @@
-// src/store/authStore.ts
 import { create } from "zustand";
 import { extractRolesFromToken } from "../utils/authHelpers";
 
@@ -12,7 +11,6 @@ interface AuthState {
   logout: () => void;
 }
 
-// Initialize authentication state based on token in localStorage
 const initialToken = localStorage.getItem("token");
 let initialIsAuthenticated = false;
 let initialUserRoles: string[] = [];

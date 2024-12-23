@@ -1,4 +1,3 @@
-// src/utils/authHelpers.ts
 import { jwtDecode } from "jwt-decode";
 
 interface MyJwtPayload {

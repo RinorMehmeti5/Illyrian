@@ -1,4 +1,3 @@
-// App.tsx
 import React, { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
@@ -17,7 +16,7 @@ function App() {
     !location.pathname.startsWith("/admin");
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen bg-stone-900">
       <ToastContainer />
       {shouldShowHeaderFooter && !userRoles.includes("Administrator") && (
         <Header />

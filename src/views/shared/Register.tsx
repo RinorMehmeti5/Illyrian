@@ -1,4 +1,3 @@
-// Register.tsx
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -31,7 +30,7 @@ const Register: React.FC = () => {
 
   return (
     <div className="flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8">
-      <ToastContainer /> {/* Toast Container */}
+      <ToastContainer />
       <div className="sm:mx-auto sm:w-full sm:max-w-sm">
         <h2 className="mt-10 text-center text-2xl font-bold leading-9 tracking-tight text-gray-900">
           Create a new account
@@ -39,7 +38,6 @@ const Register: React.FC = () => {
       </div>
       <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
         <form className="space-y-6" onSubmit={handleSubmit}>
-          {/* Email Input */}
           <div>
             <label
               htmlFor="email"
@@ -59,7 +57,6 @@ const Register: React.FC = () => {
             </div>
           </div>
 
-          {/* Password Input */}
           <div>
             <label
               htmlFor="password"
@@ -79,7 +76,6 @@ const Register: React.FC = () => {
             </div>
           </div>
 
-          {/* Confirm Password Input */}
           <div>
             <label
               htmlFor="confirmPassword"
@@ -99,7 +95,6 @@ const Register: React.FC = () => {
             </div>
           </div>
 
-          {/* Submit Button */}
           <div>
             <button
               type="submit"

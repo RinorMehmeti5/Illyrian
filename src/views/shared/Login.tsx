@@ -21,7 +21,6 @@ const Login: React.FC = () => {
       const { token } = response.data;
       localStorage.setItem("token", token);
       setToken(token);
-      // Extract roles directly from the token
       const { roles } = extractRolesFromToken(token);
 
       if (roles.includes("Administrator")) {
