@@ -1,19 +1,38 @@
-import React from "react";
+import React, { useEffect } from "react";
 import ReactDOM from "react-dom/client";
-import { PrimeReactProvider } from "primereact/api";
 import App from "./App";
-// tailwind css
 import "./index.css";
-// primreact css
-import "primeicons/primeicons.css";
-import { BrowserRouter } from "react-router-dom";
+import { BrowserRouter, useLocation } from "react-router-dom";
+import "preline/preline";
+import "./i18n";
+
+declare global {
+  interface Window {
+    HSStaticMethods: {
+      autoInit: () => void;
+    };
+  }
+}
+
+function MainApp() {
+  const location = useLocation();
+
+  useEffect(() => {
+    if (
+      window.HSStaticMethods &&
+      typeof window.HSStaticMethods.autoInit === "function"
+    ) {
+      window.HSStaticMethods.autoInit();
+    }
+  }, [location.pathname]);
+
+  return <App />;
+}
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
-    <PrimeReactProvider value={{ unstyled: false }}>
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
-    </PrimeReactProvider>
+    <BrowserRouter>
+      <MainApp />
+    </BrowserRouter>
   </React.StrictMode>
 );

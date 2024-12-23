@@ -1,22 +1,19 @@
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { Toast } from "primereact/toast";
-import { InputText } from "primereact/inputtext";
-import { Button } from "primereact/button";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const Register: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [error, setError] = useState("");
   const navigate = useNavigate();
-  const toast = useRef<Toast>(null); // Ref to control the toast
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (password !== confirmPassword) {
-      setError("Passwords do not match");
+      toast.error("Passwords do not match");
       return;
     }
     try {
@@ -24,26 +21,16 @@ const Register: React.FC = () => {
         email,
         password,
       });
-      toast.current?.show({
-        severity: "success",
-        summary: "Success",
-        detail: "Registration successful! You can now log in.",
-        life: 3000,
-      });
+      toast.success("Registration successful! You can now log in.");
       navigate("/login", { state: { fromRegister: true } });
     } catch (error) {
-      toast.current?.show({
-        severity: "error",
-        summary: "Error",
-        detail: "Registration failed. Please try again.",
-        life: 3000,
-      });
+      toast.error("Registration failed. Please try again.");
     }
   };
 
   return (
     <div className="flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8">
-      <Toast ref={toast} /> {/* Toast Component */}
+      <ToastContainer />
       <div className="sm:mx-auto sm:w-full sm:max-w-sm">
         <h2 className="mt-10 text-center text-2xl font-bold leading-9 tracking-tight text-gray-900">
           Create a new account
@@ -59,12 +46,13 @@ const Register: React.FC = () => {
               Email address
             </label>
             <div className="mt-2">
-              <InputText
+              <input
                 id="email"
+                type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter your email"
-                className="w-full p-inputtext-sm"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring focus:ring-blue-500"
               />
             </div>
           </div>
@@ -77,13 +65,13 @@ const Register: React.FC = () => {
               Password
             </label>
             <div className="mt-2">
-              <InputText
+              <input
                 id="password"
+                type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                type="password"
                 placeholder="Enter your password"
-                className="w-full p-inputtext-sm"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring focus:ring-blue-500"
               />
             </div>
           </div>
@@ -96,29 +84,26 @@ const Register: React.FC = () => {
               Confirm Password
             </label>
             <div className="mt-2">
-              <InputText
+              <input
                 id="confirmPassword"
+                type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                type="password"
                 placeholder="Confirm your password"
-                className="w-full p-inputtext-sm"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring focus:ring-blue-500"
               />
             </div>
           </div>
 
           <div>
-            <Button
+            <button
               type="submit"
-              label="Register"
-              className="w-full p-button p-component p-button-raised p-button-text p-button-lg"
-            />
+              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md bg-blue-600 text-white font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              Register
+            </button>
           </div>
         </form>
-
-        {error && (
-          <p className="mt-2 text-center text-sm text-red-600">{error}</p>
-        )}
       </div>
     </div>
   );

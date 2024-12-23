@@ -2,11 +2,11 @@
 export default {
   content: [
     "./index.html",
-    "./node_modules/primereact/**/*.{js,ts,jsx,tsx}",
+    "./node_modules/preline/dist/*.js",
     "./src/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
     extend: {},
   },
-  plugins: [],
+  plugins: [require("preline/plugin")],
 };
