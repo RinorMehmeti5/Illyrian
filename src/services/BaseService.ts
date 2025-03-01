@@ -1,4 +1,3 @@
-// src/services/BaseService.ts
 import axios, { AxiosInstance } from "axios";
 
 const BASE_URL = "https://localhost:7102/api/";
@@ -8,7 +7,6 @@ const apiClient: AxiosInstance = axios.create({
   withCredentials: true,
 });
 
-// Request interceptor to add token
 apiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
