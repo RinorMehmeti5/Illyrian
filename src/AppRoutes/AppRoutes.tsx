@@ -1,19 +1,28 @@
 // src/AppRoutes/AppRoutes.tsx
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
+import useAuthStore from "../store/authStore";
+
+// Layouts
+import PublicLayout from "../../components/layouts/PublicLayout";
+import AdminLayout from "../../components/layouts/AdminLayout";
+
+// Public views
 import Home from "../views/Home";
 import Team from "../views/Team";
 import Projects from "../views/Projects";
 import Calendar from "../views/Calendar";
 import Login from "../views/shared/Login";
 import Register from "../views/shared/Register";
-import AdminLayout from "../../components/layouts/AdminLayout";
+import Unauthorized from "../views/shared/Unauthorized";
+
+// Admin views
 import AdminDashboard from "../views/admin/AdminDashboard";
 import AdminUsers from "../views/admin/AdminUsers";
-import useAuthStore from "../store/authStore";
 import Test from "../views/Test";
-import ProtectedRoute from "../../components/ui/ProtectedRoute";
 
+// Protected route components
+import ProtectedRoute from "../../components/ui/ProtectedRoute";
 import AdminRoute from "../../components/ui/AdminRoute";
 
 const AppRoutes: React.FC = () => {
@@ -21,15 +30,18 @@ const AppRoutes: React.FC = () => {
 
   return (
     <Routes>
-      {/* Public Routes */}
-      <Route path="/" element={<Home />} />
-      <Route path="/team" element={<Team />} />
-      <Route path="/projects" element={<Projects />} />
-      <Route path="/calendar" element={<Calendar />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
+      {/* Public Routes with Public Layout */}
+      <Route element={<PublicLayout />}>
+        <Route path="/" element={<Home />} />
+        <Route path="/team" element={<Team />} />
+        <Route path="/projects" element={<Projects />} />
+        <Route path="/calendar" element={<Calendar />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/unauthorized" element={<Unauthorized />} />
+      </Route>
 
-      {/* Protected Routes */}
+      {/* Protected Route */}
       <Route
         path="/test"
         element={
@@ -37,22 +49,23 @@ const AppRoutes: React.FC = () => {
             component={Test}
             isAuthenticated={isAuthenticated}
             userRoles={userRoles}
-            requiredRoles={["Administrator"]}
+            requiredRoles={["User"]}
           />
         }
       />
 
-      {/* Admin Routes */}
-      <Route element={<AdminRoute />}>
-        <Route path="/admin" element={<AdminLayout />}>
+      {/* Admin Routes with Admin Layout */}
+      <Route path="/admin" element={<AdminRoute />}>
+        <Route element={<AdminLayout />}>
           <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="users" element={<AdminUsers />} />
-          {/* Add more admin routes here */}
+          {/* Add more admin routes as needed */}
+          <Route index element={<Navigate to="dashboard" replace />} />
         </Route>
       </Route>
 
-      {/* Redirects */}
-      <Route path="*" element={<Navigate to="/" />} />
+      {/* Fallback route */}
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 };

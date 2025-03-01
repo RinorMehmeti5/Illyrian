@@ -1,16 +1,23 @@
-// src/components/ui/AdminRoute.tsx
+// components/ui/AdminRoute.tsx
 import React from "react";
 import { Navigate, Outlet } from "react-router-dom";
 import useAuthStore from "../../src/store/authStore";
 
 const AdminRoute: React.FC = () => {
   const { isAuthenticated, userRoles } = useAuthStore();
-  const isAdmin = userRoles.includes("Administrator");
 
-  if (!isAuthenticated || !isAdmin) {
+  // Check if user is authenticated
+  if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 
+  // Check if user has admin role
+  const isAdmin = userRoles.includes("Administrator");
+  if (!isAdmin) {
+    return <Navigate to="/unauthorized" replace />;
+  }
+
+  // If authenticated and admin, render the outlet (child routes)
   return <Outlet />;
 };
 
