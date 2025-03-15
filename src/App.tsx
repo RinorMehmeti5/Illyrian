@@ -6,7 +6,7 @@ import AppRoutes from "./AppRoutes/AppRoutes";
 
 function App() {
   return (
-    <div className="flex flex-col min-h-screen">
+    <div>
       <ToastContainer position="top-right" autoClose={3000} />
       <AppRoutes />
     </div>
