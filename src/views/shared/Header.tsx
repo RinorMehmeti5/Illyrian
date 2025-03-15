@@ -1,46 +1,45 @@
 // src/views/shared/Header.tsx
-
-import React, { useState, useEffect, Fragment } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Menu, Transition } from "@headlessui/react";
-import {
-  UsersIcon,
-  BriefcaseIcon,
-  CalendarIcon,
-  HomeIcon,
-} from "@heroicons/react/24/outline";
-
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { motion, AnimatePresence } from "framer-motion";
 import useAuthStore from "../../store/authStore";
 import AuthService from "../../services/AuthService";
 
-// Import flag images (You can also import them if stored locally)
-const USA_FLAG = "https://flagcdn.com/us.svg"; // Example URL for USA flag
-const ALB_FLAG = "https://flagcdn.com/al.svg"; // Example URL for Albania flag
-
 const Header: React.FC = () => {
-  const { isAuthenticated, userRoles, username, setToken } = useAuthStore();
-  const { i18n } = useTranslation();
+  const { isAuthenticated, setToken } = useAuthStore();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
-  const location = useLocation();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
-  const changeLanguage = (lng: string) => {
-    i18n.changeLanguage(lng);
-    localStorage.setItem("language", lng);
-  };
+  const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
+  const toggleLangDropdown = () => setIsLangDropdownOpen(!isLangDropdownOpen);
 
   useEffect(() => {
     const language = localStorage.getItem("language") || "en";
     i18n.changeLanguage(language);
-  }, [i18n]);
 
-  const navigation = [
-    { name: "Home", icon: HomeIcon, to: "/" },
-    { name: "Team", icon: UsersIcon, to: "/team" },
-    { name: "Projects", icon: BriefcaseIcon, to: "/projects" },
-    { name: "Calendar", icon: CalendarIcon, to: "/calendar" },
-  ];
+    const handleScroll = () => {
+      const isScrolled = window.scrollY > 10;
+      if (isScrolled !== scrolled) {
+        setScrolled(isScrolled);
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll);
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, [i18n, scrolled]);
+
+  const changeLanguage = (lng: string) => {
+    i18n.changeLanguage(lng);
+    localStorage.setItem("language", lng);
+    setIsLangDropdownOpen(false);
+  };
 
   const handleLogout = async () => {
     try {
@@ -53,242 +52,349 @@ const Header: React.FC = () => {
     }
   };
 
+  const headerVariants = {
+    hidden: { opacity: 0, y: -50 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        type: "spring",
+        stiffness: 100,
+        damping: 15,
+      },
+    },
+  };
+
+  const menuItemVariants = {
+    hidden: { opacity: 0, x: -20 },
+    visible: (custom: number) => ({
+      opacity: 1,
+      x: 0,
+      transition: {
+        delay: custom * 0.1,
+        type: "spring",
+        stiffness: 100,
+      },
+    }),
+  };
+
+  const mobileMenuVariants = {
+    hidden: { opacity: 0, height: 0 },
+    visible: {
+      opacity: 1,
+      height: "auto",
+      transition: {
+        duration: 0.3,
+        when: "beforeChildren",
+        staggerChildren: 0.1,
+      },
+    },
+    exit: {
+      opacity: 0,
+      height: 0,
+      transition: { duration: 0.3 },
+    },
+  };
+
+  const dropdownVariants = {
+    hidden: { opacity: 0, y: -10 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.2 },
+    },
+    exit: {
+      opacity: 0,
+      y: -10,
+      transition: { duration: 0.2 },
+    },
+  };
+
+  // Navigation items for reuse
+  const navItems = [
+    { name: t("Home"), path: "/" },
+    { name: t("Team"), path: "/team" },
+    { name: t("Projects"), path: "/projects" },
+    { name: t("Calendar"), path: "/calendar" },
+  ];
+
   return (
-    <header className="flex flex-wrap md:justify-start md:flex-nowrap z-50 w-full py-7">
-      <nav className="relative max-w-7xl w-full flex flex-wrap md:grid md:grid-cols-12 basis-full items-center px-4 md:px-6 md:px-8 mx-auto">
-        <div className="md:col-span-3">
+    <motion.header
+      initial="hidden"
+      animate="visible"
+      variants={headerVariants}
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        scrolled
+          ? "bg-black text-white shadow-lg py-2"
+          : "bg-[#FFFDF2] text-black py-2"
+      }`}
+    >
+      <div className="container mx-auto px-4">
+        <div className="flex justify-between items-center">
           {/* Logo */}
-          <Link
-            className="flex-none rounded-xl text-xl inline-block font-semibold focus:outline-none focus:opacity-80"
-            to="/"
-            aria-label="Your Company"
-          >
-            {/* Replace the SVG with your logo or keep it as needed */}
-            <img
-              src="/public/photos/LOGOO.png"
-              alt="Your Company"
-              className="h-20"
-            />
-          </Link>
-          {/* End Logo */}
-        </div>
-
-        {/* Button Group */}
-        <div className="flex items-center gap-x-1 md:gap-x-2 ms-auto py-1 md:ps-6 md:order-3 md:col-span-3">
-          {isAuthenticated ? (
-            <>
-              {/* Profile Dropdown */}
-              <Menu as="div" className="relative">
-                <div>
-                  <Menu.Button className="flex items-center text-sm rounded-full focus:outline-none">
-                    <UsersIcon
-                      className="h-6 w-6 text-gray-400"
-                      aria-hidden="true"
-                    />
-                    <span className="ml-2">{username}</span>
-                  </Menu.Button>
-                </div>
-                <Transition
-                  as={Fragment}
-                  enter="transition ease-out duration-100"
-                  enterFrom="transform opacity-0 scale-95"
-                  enterTo="transform opacity-100 scale-100"
-                  leave="transition ease-in duration-75"
-                  leaveFrom="transform opacity-100 scale-100"
-                  leaveTo="transform opacity-0 scale-95"
-                >
-                  <Menu.Items className="absolute right-0 mt-2 w-48 bg-white text-black rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
-                    <Menu.Item>
-                      {({ active }) => (
-                        <div
-                          className={`block px-4 py-2 text-sm text-gray-700 ${
-                            active ? "bg-gray-100" : ""
-                          }`}
-                        >
-                          Signed in as <strong>{username}</strong>
-                        </div>
-                      )}
-                    </Menu.Item>
-                    <Menu.Item>
-                      {({ active }) => (
-                        <button
-                          onClick={handleLogout}
-                          className={`block w-full text-left px-4 py-2 text-sm text-gray-700 ${
-                            active ? "bg-gray-100" : ""
-                          }`}
-                        >
-                          Sign Out
-                        </button>
-                      )}
-                    </Menu.Item>
-                  </Menu.Items>
-                </Transition>
-              </Menu>
-            </>
-          ) : (
-            <>
-              <Link
-                to="/login"
-                className="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-xl bg-white border border-gray-200 text-black hover:bg-gray-100 focus:outline-none focus:bg-gray-100"
-              >
-                Sign in
-              </Link>
-              <Link
-                to="/register"
-                className="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-xl border border-transparent bg-lime-400 text-black hover:bg-lime-500 focus:outline-none focus:bg-lime-500 transition"
-              >
-                Register
-              </Link>
-            </>
-          )}
-
-          {/* Language Dropdown */}
-          <div className="hs-dropdown relative inline-flex">
-            <button
-              id="hs-dropdown-language"
-              type="button"
-              className="hs-dropdown-toggle py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-xl bg-white border border-gray-200 text-black hover:bg-gray-100 focus:outline-none focus:bg-gray-100"
-            >
-              {/* Display the current language flag */}
-              <img
-                src={i18n.language === "en" ? USA_FLAG : ALB_FLAG}
-                alt={i18n.language === "en" ? "English" : "Shqip"}
-                className="w-6 h-6 rounded-full"
-              />
-              {/* Optionally display the language code */}
-              {/* <span>{i18n.language.toUpperCase()}</span> */}
-              <svg
-                className="hs-dropdown-open:rotate-180 size-4 transition-transform duration-300"
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="m6 9 6 6 6-6" />
-              </svg>
-            </button>
-
-            <div
-              className="hs-dropdown-menu transition-opacity duration-150 hs-dropdown-open:opacity-100 opacity-0 hidden min-w-60 bg-white shadow-md rounded-lg mt-2"
-              role="menu"
-              aria-orientation="vertical"
-              aria-labelledby="hs-dropdown-language"
-            >
-              <div className="p-1 space-y-1">
-                <button
-                  onClick={() => changeLanguage("en")}
-                  className="flex items-center gap-x-2 py-2 px-3 rounded-lg text-sm text-gray-800 hover:bg-gray-100 focus:outline-none w-full text-left"
-                >
-                  <img
-                    src={USA_FLAG}
-                    alt="English"
-                    className="w-5 h-5 rounded-full"
-                  />
-                  English (EN)
-                </button>
-                <button
-                  onClick={() => changeLanguage("sq")}
-                  className="flex items-center gap-x-2 py-2 px-3 rounded-lg text-sm text-gray-800 hover:bg-gray-100 focus:outline-none w-full text-left"
-                >
-                  <img
-                    src={ALB_FLAG}
-                    alt="Shqip"
-                    className="w-5 h-5 rounded-full"
-                  />
-                  Shqip (SQ)
-                </button>
-              </div>
-            </div>
+          <div className="h-16 flex items-center">
+            <Link to="/" className="flex items-center">
+              <img src="/photos/LOGOO.png" alt="Logo" className="h-20 mr-3" />
+              <span className="text-xl font-bold">Ilyrian Gym</span>
+            </Link>
           </div>
-          {/* End Language Dropdown */}
 
-          <div className="md:hidden">
-            <button
-              type="button"
-              className="hs-collapse-toggle size-[38px] flex justify-center items-center text-sm font-semibold rounded-xl border border-gray-200 text-black hover:bg-gray-100 focus:outline-none focus:bg-gray-100"
-              id="hs-navbar-hcail-collapse"
-              aria-expanded={isMobileMenuOpen}
-              aria-controls="hs-navbar-hcail"
-              aria-label="Toggle navigation"
-              data-hs-collapse="#hs-navbar-hcail"
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            >
-              <svg
-                className={`${
-                  isMobileMenuOpen ? "hidden" : "block"
-                } hs-collapse-open:hidden shrink-0 size-4`}
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex items-center space-x-8">
+            {navItems.map((item, index) => (
+              <motion.div
+                key={item.path}
+                custom={index}
+                variants={menuItemVariants}
               >
-                <line x1="3" x2="21" y1="6" y2="6" />
-                <line x1="3" x2="21" y1="12" y2="12" />
-                <line x1="3" x2="21" y1="18" y2="18" />
-              </svg>
-              <svg
-                className={`${
-                  isMobileMenuOpen ? "block" : "hidden"
-                } hs-collapse-open:block hidden shrink-0 size-4`}
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M18 6 6 18" />
-                <path d="m6 6 12 12" />
-              </svg>
-            </button>
-          </div>
-        </div>
-        {/* End Button Group */}
-
-        {/* Collapse */}
-        <div
-          id="hs-navbar-hcail"
-          className={`hs-collapse transition-all duration-300 basis-full grow md:block md:w-auto md:basis-auto md:order-2 md:col-span-6 ${
-            isMobileMenuOpen ? "block" : "hidden"
-          }`}
-          aria-labelledby="hs-navbar-hcail-collapse"
-        >
-          <div className="flex flex-col gap-y-4 gap-x-0 mt-5 md:flex-row md:justify-center md:items-center md:gap-y-0 md:gap-x-7 md:mt-0">
-            {navigation.map((item) => (
-              <div key={item.name}>
                 <Link
-                  className={`relative inline-block text-white focus:outline-none ${
-                    location.pathname === item.to
-                      ? "before:absolute before:bottom-0.5 before:start-0 before:-z-[1] before:w-full before:h-1 before:bg-lime-400"
-                      : "hover:text-gray-600"
+                  to={item.path}
+                  className={`px-3 py-2 rounded hover:opacity-80 transition border-b-2 ${
+                    scrolled
+                      ? "border-transparent hover:border-white"
+                      : "border-transparent hover:border-black"
                   }`}
-                  to={item.to}
-                  aria-current={
-                    location.pathname === item.to ? "page" : undefined
-                  }
                 >
                   {item.name}
                 </Link>
-              </div>
+              </motion.div>
             ))}
+
+            {/* Language Selector */}
+            <div className="relative">
+              <motion.button
+                onClick={toggleLangDropdown}
+                className="flex items-center px-3 py-2 rounded hover:opacity-80 transition"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <span className="mr-1">
+                  {i18n.language === "en" ? "EN" : "SQ"}
+                </span>
+                <svg
+                  className={`h-4 w-4 transition-transform ${
+                    isLangDropdownOpen ? "rotate-180" : ""
+                  }`}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </motion.button>
+
+              <AnimatePresence>
+                {isLangDropdownOpen && (
+                  <motion.div
+                    initial="hidden"
+                    animate="visible"
+                    exit="exit"
+                    variants={dropdownVariants}
+                    className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10"
+                  >
+                    <div className="py-1">
+                      <button
+                        onClick={() => changeLanguage("en")}
+                        className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      >
+                        English
+                      </button>
+                      <button
+                        onClick={() => changeLanguage("sq")}
+                        className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      >
+                        Shqip
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Auth Buttons */}
+            {isAuthenticated ? (
+              <motion.button
+                onClick={handleLogout}
+                className={`px-4 py-2 ${
+                  scrolled ? "bg-white text-black" : "bg-black text-white"
+                } hover:opacity-80 rounded transition`}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                {t("Logout")}
+              </motion.button>
+            ) : (
+              <div className="flex items-center space-x-2">
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Link
+                    to="/login"
+                    className={`px-4 py-2 ${
+                      scrolled ? "bg-white text-black" : "bg-black text-white"
+                    } rounded transition`}
+                  >
+                    {t("Login")}
+                  </Link>
+                </motion.div>
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Link
+                    to="/register"
+                    className={`px-4 py-2 ${
+                      scrolled
+                        ? "border border-white text-white"
+                        : "border border-black text-black"
+                    } rounded transition`}
+                  >
+                    {t("Register")}
+                  </Link>
+                </motion.div>
+              </div>
+            )}
+          </nav>
+
+          {/* Mobile menu button */}
+          <div className="md:hidden">
+            <motion.button
+              onClick={toggleMenu}
+              className="text-current focus:outline-none"
+              whileTap={{ scale: 0.9 }}
+            >
+              <svg
+                className="h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                {isMenuOpen ? (
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                ) : (
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 6h16M4 12h16m-7 6h7"
+                  />
+                )}
+              </svg>
+            </motion.button>
           </div>
         </div>
-        {/* End Collapse */}
-      </nav>
-    </header>
+
+        {/* Mobile Navigation Menu */}
+        <AnimatePresence>
+          {isMenuOpen && (
+            <motion.div
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              variants={mobileMenuVariants}
+              className="md:hidden overflow-hidden"
+            >
+              <div className="flex flex-col space-y-2 py-4">
+                {navItems.map((item, index) => (
+                  <motion.div
+                    key={item.path}
+                    variants={menuItemVariants}
+                    custom={index}
+                  >
+                    <Link
+                      to={item.path}
+                      className={`block px-3 py-2 rounded ${
+                        scrolled
+                          ? "hover:bg-white hover:text-black"
+                          : "hover:bg-black hover:text-white"
+                      } transition`}
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      {item.name}
+                    </Link>
+                  </motion.div>
+                ))}
+
+                {/* Language Options */}
+                <div className="px-3 py-2 space-y-2">
+                  <div className="text-sm font-medium">{t("Language")}:</div>
+                  <div className="flex space-x-4">
+                    <motion.button
+                      onClick={() => changeLanguage("en")}
+                      className="flex items-center"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      English
+                    </motion.button>
+                    <motion.button
+                      onClick={() => changeLanguage("sq")}
+                      className="flex items-center"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      Shqip
+                    </motion.button>
+                  </div>
+                </div>
+
+                {/* Auth Buttons */}
+                <div className="pt-2">
+                  {isAuthenticated ? (
+                    <motion.button
+                      onClick={handleLogout}
+                      className={`w-full px-4 py-2 ${
+                        scrolled ? "bg-white text-black" : "bg-black text-white"
+                      } rounded transition`}
+                      whileHover={{ scale: 1.03 }}
+                      whileTap={{ scale: 0.97 }}
+                    >
+                      {t("Logout")}
+                    </motion.button>
+                  ) : (
+                    <div className="flex flex-col space-y-2">
+                      <Link
+                        to="/login"
+                        className={`px-4 py-2 ${
+                          scrolled
+                            ? "bg-white text-black"
+                            : "bg-black text-white"
+                        } rounded text-center transition`}
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        {t("Login")}
+                      </Link>
+                      <Link
+                        to="/register"
+                        className={`px-4 py-2 ${
+                          scrolled
+                            ? "border border-white text-white"
+                            : "border border-black text-black"
+                        } rounded text-center transition`}
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        {t("Register")}
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </motion.header>
   );
 };
 

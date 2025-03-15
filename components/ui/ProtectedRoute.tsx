@@ -1,4 +1,4 @@
-// ProtectedRoute.tsx
+// components/ui/ProtectedRoute.tsx
 import React from "react";
 import { Navigate } from "react-router-dom";
 
@@ -15,14 +15,22 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   userRoles,
   requiredRoles = [],
 }) => {
-  const hasRequiredRole =
-    requiredRoles.length === 0 ||
-    requiredRoles.some((role) => userRoles.includes(role));
-
-  if (!isAuthenticated || !hasRequiredRole) {
+  // Check if user is authenticated
+  if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 
+  // Check if roles are required and if user has required roles
+  if (requiredRoles.length > 0) {
+    const hasRequiredRole = requiredRoles.some((role) =>
+      userRoles.includes(role)
+    );
+    if (!hasRequiredRole) {
+      return <Navigate to="/unauthorized" replace />;
+    }
+  }
+
+  // If authenticated and has required roles (or no roles required), render the component
   return <Component />;
 };
 
