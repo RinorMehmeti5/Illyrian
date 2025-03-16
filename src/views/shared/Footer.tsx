@@ -67,7 +67,6 @@ const Footer: React.FC = () => {
                 { title: t("Home"), path: "/" },
                 { title: t("Team"), path: "/team" },
                 { title: t("Projects"), path: "/projects" },
-                { title: t("Calendar"), path: "/calendar" },
               ].map((link, index) => (
                 <motion.li key={index} initial="initial" whileHover="hover">
                   <motion.div variants={linkHoverVariants}>

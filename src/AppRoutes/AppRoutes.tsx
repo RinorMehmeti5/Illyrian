@@ -5,13 +5,12 @@ import useAuthStore from "../store/authStore";
 
 // Layouts
 import PublicLayout from "../../components/layouts/PublicLayout";
-import AdminLayout from "../../components/layouts/AdminLayout";
+import MaterialAdminLayout from "../../components/layouts/MaterialAdminLayout";
 
 // Public views
 import Home from "../views/Home";
 import Team from "../views/Team";
 import Projects from "../views/Projects";
-import Calendar from "../views/Calendar";
 import Login from "../views/shared/Login";
 import Register from "../views/shared/Register";
 import Unauthorized from "../views/shared/Unauthorized";
@@ -35,7 +34,6 @@ const AppRoutes: React.FC = () => {
         <Route path="/" element={<Home />} />
         <Route path="/team" element={<Team />} />
         <Route path="/projects" element={<Projects />} />
-        <Route path="/calendar" element={<Calendar />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/unauthorized" element={<Unauthorized />} />
@@ -54,9 +52,9 @@ const AppRoutes: React.FC = () => {
         }
       />
 
-      {/* Admin Routes with Admin Layout */}
+      {/* Admin Routes with Material UI Admin Layout */}
       <Route path="/admin" element={<AdminRoute />}>
-        <Route element={<AdminLayout />}>
+        <Route element={<MaterialAdminLayout />}>
           <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="users" element={<AdminUsers />} />
           {/* Add more admin routes as needed */}
