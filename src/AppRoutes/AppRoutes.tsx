@@ -23,6 +23,7 @@ import Test from "../views/Test";
 // Protected route components
 import ProtectedRoute from "../../components/ui/ProtectedRoute";
 import AdminRoute from "../../components/ui/AdminRoute";
+import AdminMemberships from "../views/admin/AdminMemberships";
 
 const AppRoutes: React.FC = () => {
   const { isAuthenticated, userRoles } = useAuthStore();
@@ -57,6 +58,7 @@ const AppRoutes: React.FC = () => {
         <Route element={<MaterialAdminLayout />}>
           <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="users" element={<AdminUsers />} />
+          <Route path="memeberships" element={<AdminMemberships />} />
           {/* Add more admin routes as needed */}
           <Route index element={<Navigate to="dashboard" replace />} />
         </Route>

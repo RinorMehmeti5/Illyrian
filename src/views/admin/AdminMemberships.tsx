@@ -1,0 +1,475 @@
+// src/views/admin/AdminMemberships.tsx
+import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { toast } from "react-toastify";
+import useMembershipStore from "../../store/membershipStore";
+import {
+  CreateMembershipRequest,
+  UpdateMembershipRequest,
+} from "../../services/MembershipService";
+import useAuthStore from "../../store/authStore";
+
+const AdminMemberships: React.FC = () => {
+  const { t } = useTranslation();
+  const {
+    memberships,
+    membershipTypes,
+    isLoading,
+    error,
+    selectedMembership,
+    fetchMemberships,
+    fetchMembershipTypes,
+    createMembership,
+    updateMembership,
+    deleteMembership,
+    setSelectedMembership,
+    clearError,
+  } = useMembershipStore();
+
+  // For user selection dropdown - in a real app, this would be populated from an API
+  const { userRoles, username } = useAuthStore();
+
+  const [showMembershipForm, setShowMembershipForm] = useState(false);
+  const [formData, setFormData] = useState<
+    CreateMembershipRequest & { membershipId?: number }
+  >({
+    userId: "",
+    membershipTypeId: 1,
+    startDate: new Date().toISOString().split("T")[0],
+    endDate: new Date(new Date().setMonth(new Date().getMonth() + 1))
+      .toISOString()
+      .split("T")[0],
+    isActive: true,
+  });
+  const [isEditing, setIsEditing] = useState(false);
+
+  // Fetch memberships and membership types when component mounts
+  useEffect(() => {
+    fetchMemberships();
+    fetchMembershipTypes();
+  }, [fetchMemberships, fetchMembershipTypes]);
+
+  // Show error toast if error occurs
+  useEffect(() => {
+    if (error) {
+      toast.error(error);
+      clearError();
+    }
+  }, [error, clearError]);
+
+  // Populate form when editing a membership
+  useEffect(() => {
+    if (selectedMembership && isEditing) {
+      setFormData({
+        membershipId: selectedMembership.membershipId,
+        userId: selectedMembership.userId,
+        membershipTypeId: selectedMembership.membershipTypeId,
+        startDate: new Date(selectedMembership.startDate)
+          .toISOString()
+          .split("T")[0],
+        endDate: new Date(selectedMembership.endDate)
+          .toISOString()
+          .split("T")[0],
+        isActive: selectedMembership.isActive,
+      });
+    }
+  }, [selectedMembership, isEditing]);
+
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    const { name, value, type } = e.target;
+
+    if (type === "checkbox") {
+      const target = e.target as HTMLInputElement;
+      setFormData((prev) => ({
+        ...prev,
+        [name]: target.checked,
+      }));
+    } else if (name === "membershipTypeId") {
+      // Convert to number for select inputs
+      setFormData((prev) => ({
+        ...prev,
+        [name]: parseInt(value, 10),
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    let success = false;
+
+    if (isEditing && selectedMembership) {
+      const updateData: UpdateMembershipRequest = {
+        membershipId: selectedMembership.membershipId,
+        userId: formData.userId,
+        membershipTypeId: formData.membershipTypeId,
+        startDate: formData.startDate,
+        endDate: formData.endDate,
+        isActive: formData.isActive,
+      };
+      success = await updateMembership(
+        selectedMembership.membershipId,
+        updateData
+      );
+    } else {
+      success = await createMembership(formData);
+    }
+
+    if (success) {
+      toast.success(
+        isEditing
+          ? t("Membership updated successfully")
+          : t("Membership created successfully")
+      );
+      resetForm();
+    }
+  };
+
+  const handleEditMembership = (membership: any) => {
+    setSelectedMembership(membership);
+    setIsEditing(true);
+    setShowMembershipForm(true);
+  };
+
+  const handleDeleteMembership = async (id: number) => {
+    if (window.confirm(t("Are you sure you want to delete this membership?"))) {
+      const success = await deleteMembership(id);
+      if (success) {
+        toast.success(t("Membership deleted successfully"));
+      }
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      userId: "",
+      membershipTypeId: 1,
+      startDate: new Date().toISOString().split("T")[0],
+      endDate: new Date(new Date().setMonth(new Date().getMonth() + 1))
+        .toISOString()
+        .split("T")[0],
+      isActive: true,
+    });
+    setIsEditing(false);
+    setShowMembershipForm(false);
+    setSelectedMembership(null);
+  };
+
+  // Calculate end date based on membership type duration
+  const calculateEndDate = (startDate: string, membershipTypeId: number) => {
+    const selectedType = membershipTypes.find((t) => t.id === membershipTypeId);
+    if (selectedType && startDate) {
+      const start = new Date(startDate);
+      const end = new Date(start);
+      end.setDate(start.getDate() + (selectedType.durationInDays || 30));
+      return end.toISOString().split("T")[0];
+    }
+    return formData.endDate;
+  };
+
+  // Update end date when start date or membership type changes
+  useEffect(() => {
+    if (formData.startDate && formData.membershipTypeId && !isEditing) {
+      const newEndDate = calculateEndDate(
+        formData.startDate,
+        formData.membershipTypeId
+      );
+      setFormData((prev) => ({
+        ...prev,
+        endDate: newEndDate,
+      }));
+    }
+  }, [formData.startDate, formData.membershipTypeId, isEditing]);
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold">{t("Membership Management")}</h2>
+        <button
+          onClick={() => {
+            resetForm();
+            setShowMembershipForm(!showMembershipForm);
+          }}
+          className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+        >
+          {showMembershipForm ? t("Cancel") : t("Add New Membership")}
+        </button>
+      </div>
+
+      {/* Membership Form */}
+      {showMembershipForm && (
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <h3 className="text-xl font-semibold mb-4">
+            {isEditing ? t("Edit Membership") : t("Create New Membership")}
+          </h3>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label
+                htmlFor="userId"
+                className="block text-sm font-medium text-gray-700"
+              >
+                {t("User ID")}
+              </label>
+              <input
+                type="text"
+                id="userId"
+                name="userId"
+                value={formData.userId}
+                onChange={handleInputChange}
+                required
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                placeholder={t("User ID")}
+              />
+              {/* In a real app, you'd probably have a user dropdown here */}
+            </div>
+
+            <div>
+              <label
+                htmlFor="membershipTypeId"
+                className="block text-sm font-medium text-gray-700"
+              >
+                {t("Membership Type")}
+              </label>
+              <select
+                id="membershipTypeId"
+                name="membershipTypeId"
+                value={formData.membershipTypeId}
+                onChange={handleInputChange}
+                required
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+              >
+                {membershipTypes.length > 0 ? (
+                  membershipTypes.map((type) => (
+                    <option key={type.id} value={type.id}>
+                      {type.name} ({type.durationInDays} days -{" "}
+                      {new Intl.NumberFormat(undefined, {
+                        style: "currency",
+                        currency: "USD",
+                      }).format(type.price)}
+                      )
+                    </option>
+                  ))
+                ) : (
+                  <option value="1">{t("Loading membership types...")}</option>
+                )}
+              </select>
+            </div>
+
+            <div>
+              <label
+                htmlFor="startDate"
+                className="block text-sm font-medium text-gray-700"
+              >
+                {t("Start Date")}
+              </label>
+              <input
+                type="date"
+                id="startDate"
+                name="startDate"
+                value={formData.startDate}
+                onChange={handleInputChange}
+                required
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="endDate"
+                className="block text-sm font-medium text-gray-700"
+              >
+                {t("End Date")}
+              </label>
+              <input
+                type="date"
+                id="endDate"
+                name="endDate"
+                value={formData.endDate}
+                onChange={handleInputChange}
+                required
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+              />
+            </div>
+
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                id="isActive"
+                name="isActive"
+                checked={formData.isActive}
+                onChange={(e) =>
+                  setFormData({ ...formData, isActive: e.target.checked })
+                }
+                className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+              />
+              <label
+                htmlFor="isActive"
+                className="ml-2 block text-sm text-gray-900"
+              >
+                {t("Active")}
+              </label>
+            </div>
+
+            <div className="flex justify-end space-x-3 pt-4">
+              <button
+                type="button"
+                onClick={resetForm}
+                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+              >
+                {t("Cancel")}
+              </button>
+              <button
+                type="submit"
+                disabled={isLoading}
+                className={`px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 ${
+                  isLoading ? "opacity-70 cursor-not-allowed" : ""
+                }`}
+              >
+                {isLoading
+                  ? t("Saving...")
+                  : isEditing
+                  ? t("Update")
+                  : t("Create")}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Memberships Table */}
+      <div className="bg-white shadow-md rounded-lg overflow-hidden">
+        <div className="px-4 py-5 sm:px-6 border-b">
+          <h3 className="text-lg font-medium leading-6 text-gray-900">
+            {t("Memberships")}
+          </h3>
+          <p className="mt-1 max-w-2xl text-sm text-gray-500">
+            {t("Manage all memberships from here.")}
+          </p>
+        </div>
+
+        {isLoading && !memberships.length ? (
+          <div className="p-6 text-center">
+            <svg
+              className="animate-spin mx-auto h-8 w-8 text-primary-600"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              ></circle>
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              ></path>
+            </svg>
+            <p className="mt-2">{t("Loading memberships...")}</p>
+          </div>
+        ) : memberships.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    {t("User")}
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    {t("Membership Type")}
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    {t("Duration")}
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    {t("Price")}
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    {t("Start Date")}
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    {t("End Date")}
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    {t("Status")}
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    {t("Actions")}
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {memberships.map((membership) => (
+                  <tr key={membership.membershipId}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      {membership.userFullName}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {membership.membershipTypeName}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {membership.formattedDuration}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {membership.formattedPrice}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {membership.formattedStartDate}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {membership.formattedEndDate}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span
+                        className={`inline-flex px-2 text-xs font-semibold leading-5 rounded-full ${
+                          membership.isActive
+                            ? "bg-green-100 text-green-800"
+                            : "bg-red-100 text-red-800"
+                        }`}
+                      >
+                        {membership.isActive ? t("Active") : t("Inactive")}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <button
+                        onClick={() => handleEditMembership(membership)}
+                        className="text-primary-600 hover:text-primary-900 mr-3"
+                      >
+                        {t("Edit")}
+                      </button>
+                      <button
+                        onClick={() =>
+                          handleDeleteMembership(membership.membershipId)
+                        }
+                        className="text-red-600 hover:text-red-900"
+                      >
+                        {t("Delete")}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="p-6 text-center">
+            <p className="text-gray-500">{t("No memberships found.")}</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default AdminMemberships;
