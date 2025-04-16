@@ -1,5 +1,4 @@
-// src/views/admin/AdminMemberships.tsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import useMembershipStore from "../../store/membershipStore";
@@ -8,6 +7,16 @@ import {
   UpdateMembershipRequest,
 } from "../../services/MembershipService";
 import useAuthStore from "../../store/authStore";
+import {
+  useReactTable,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getSortedRowModel,
+  getPaginationRowModel,
+  flexRender,
+  ColumnDef,
+  SortingState,
+} from "@tanstack/react-table";
 
 const AdminMemberships: React.FC = () => {
   const { t } = useTranslation();
@@ -26,7 +35,6 @@ const AdminMemberships: React.FC = () => {
     clearError,
   } = useMembershipStore();
 
-  // For user selection dropdown - in a real app, this would be populated from an API
   const { userRoles, username } = useAuthStore();
 
   const [showMembershipForm, setShowMembershipForm] = useState(false);
@@ -42,6 +50,10 @@ const AdminMemberships: React.FC = () => {
     isActive: true,
   });
   const [isEditing, setIsEditing] = useState(false);
+
+  // TanStack Table state
+  const [globalFilter, setGlobalFilter] = useState("");
+  const [sorting, setSorting] = useState<SortingState>([]);
 
   // Fetch memberships and membership types when component mounts
   useEffect(() => {
@@ -87,7 +99,6 @@ const AdminMemberships: React.FC = () => {
         [name]: target.checked,
       }));
     } else if (name === "membershipTypeId") {
-      // Convert to number for select inputs
       setFormData((prev) => ({
         ...prev,
         [name]: parseInt(value, 10),
@@ -164,7 +175,9 @@ const AdminMemberships: React.FC = () => {
 
   // Calculate end date based on membership type duration
   const calculateEndDate = (startDate: string, membershipTypeId: number) => {
-    const selectedType = membershipTypes.find((t) => t.id === membershipTypeId);
+    const selectedType = membershipTypes.find(
+      (t) => t.membershipTypeID === membershipTypeId
+    );
     if (selectedType && startDate) {
       const start = new Date(startDate);
       const end = new Date(start);
@@ -187,6 +200,95 @@ const AdminMemberships: React.FC = () => {
       }));
     }
   }, [formData.startDate, formData.membershipTypeId, isEditing]);
+
+  // TanStack Table columns
+  const columns = useMemo<ColumnDef<any, any>[]>(
+    () => [
+      {
+        accessorKey: "userFullName",
+        header: t("User"),
+        cell: (info) => info.getValue(),
+      },
+      {
+        accessorKey: "membershipTypeName",
+        header: t("Membership Type"),
+        cell: (info) => info.getValue(),
+      },
+      {
+        accessorKey: "formattedDuration",
+        header: t("Duration"),
+        cell: (info) => info.getValue(),
+      },
+      {
+        accessorKey: "formattedPrice",
+        header: t("Price"),
+        cell: (info) => info.getValue(),
+      },
+      {
+        accessorKey: "formattedStartDate",
+        header: t("Start Date"),
+        cell: (info) => info.getValue(),
+      },
+      {
+        accessorKey: "formattedEndDate",
+        header: t("End Date"),
+        cell: (info) => info.getValue(),
+      },
+      {
+        accessorKey: "isActive",
+        header: t("Status"),
+        cell: (info) =>
+          info.getValue() ? (
+            <span className="inline-flex px-2 text-xs font-semibold leading-5 rounded-full bg-green-100 text-green-800">
+              {t("Active")}
+            </span>
+          ) : (
+            <span className="inline-flex px-2 text-xs font-semibold leading-5 rounded-full bg-red-100 text-red-800">
+              {t("Inactive")}
+            </span>
+          ),
+        enableSorting: true,
+      },
+      {
+        id: "actions",
+        header: t("Actions"),
+        cell: ({ row }) => (
+          <div className="flex gap-2 justify-end">
+            <button
+              onClick={() => handleEditMembership(row.original)}
+              className="text-primary-600 hover:text-primary-900 mr-3"
+            >
+              {t("Edit")}
+            </button>
+            <button
+              onClick={() => handleDeleteMembership(row.original.membershipId)}
+              className="text-red-600 hover:text-red-900"
+            >
+              {t("Delete")}
+            </button>
+          </div>
+        ),
+        enableSorting: false,
+      },
+    ],
+    [t]
+  );
+
+  // TanStack Table instance
+  const table = useReactTable({
+    data: memberships,
+    columns,
+    state: {
+      globalFilter,
+      sorting,
+    },
+    onGlobalFilterChange: setGlobalFilter,
+    onSortingChange: setSorting,
+    getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+  });
 
   return (
     <div className="space-y-6">
@@ -227,7 +329,6 @@ const AdminMemberships: React.FC = () => {
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
                 placeholder={t("User ID")}
               />
-              {/* In a real app, you'd probably have a user dropdown here */}
             </div>
 
             <div>
@@ -247,13 +348,12 @@ const AdminMemberships: React.FC = () => {
               >
                 {membershipTypes.length > 0 ? (
                   membershipTypes.map((type) => (
-                    <option key={type.id} value={type.id}>
-                      {type.name} ({type.durationInDays} days -{" "}
-                      {new Intl.NumberFormat(undefined, {
-                        style: "currency",
-                        currency: "USD",
-                      }).format(type.price)}
-                      )
+                    <option
+                      key={type.membershipTypeID}
+                      value={type.membershipTypeID}
+                    >
+                      {type.name} ({type.formattedDuration} -{" "}
+                      {type.formattedPrice})
                     </option>
                   ))
                 ) : (
@@ -345,13 +445,22 @@ const AdminMemberships: React.FC = () => {
 
       {/* Memberships Table */}
       <div className="bg-white shadow-md rounded-lg overflow-hidden">
-        <div className="px-4 py-5 sm:px-6 border-b">
-          <h3 className="text-lg font-medium leading-6 text-gray-900">
-            {t("Memberships")}
-          </h3>
-          <p className="mt-1 max-w-2xl text-sm text-gray-500">
-            {t("Manage all memberships from here.")}
-          </p>
+        <div className="px-4 py-5 sm:px-6 border-b flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <div>
+            <h3 className="text-lg font-medium leading-6 text-gray-900">
+              {t("Memberships")}
+            </h3>
+            <p className="mt-1 max-w-2xl text-sm text-gray-500">
+              {t("Manage all memberships from here.")}
+            </p>
+          </div>
+          <input
+            type="text"
+            value={globalFilter ?? ""}
+            onChange={(e) => setGlobalFilter(e.target.value)}
+            placeholder={t("Search...")}
+            className="mt-2 sm:mt-0 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+          />
         </div>
 
         {isLoading && !memberships.length ? (
@@ -378,95 +487,114 @@ const AdminMemberships: React.FC = () => {
             </svg>
             <p className="mt-2">{t("Loading memberships...")}</p>
           </div>
-        ) : memberships.length > 0 ? (
+        ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t("User")}
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t("Membership Type")}
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t("Duration")}
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t("Price")}
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t("Start Date")}
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t("End Date")}
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t("Status")}
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t("Actions")}
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {memberships.map((membership) => (
-                  <tr key={membership.membershipId}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {membership.userFullName}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {membership.membershipTypeName}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {membership.formattedDuration}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {membership.formattedPrice}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {membership.formattedStartDate}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {membership.formattedEndDate}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`inline-flex px-2 text-xs font-semibold leading-5 rounded-full ${
-                          membership.isActive
-                            ? "bg-green-100 text-green-800"
-                            : "bg-red-100 text-red-800"
-                        }`}
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <tr key={headerGroup.id}>
+                    {headerGroup.headers.map((header) => (
+                      <th
+                        key={header.id}
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer select-none"
+                        onClick={header.column.getToggleSortingHandler()}
                       >
-                        {membership.isActive ? t("Active") : t("Inactive")}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <button
-                        onClick={() => handleEditMembership(membership)}
-                        className="text-primary-600 hover:text-primary-900 mr-3"
-                      >
-                        {t("Edit")}
-                      </button>
-                      <button
-                        onClick={() =>
-                          handleDeleteMembership(membership.membershipId)
-                        }
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        {t("Delete")}
-                      </button>
-                    </td>
+                        {flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
+                        {{
+                          asc: " ▲",
+                          desc: " ▼",
+                        }[header.column.getIsSorted() as string] ?? null}
+                      </th>
+                    ))}
                   </tr>
                 ))}
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {table.getRowModel().rows.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={columns.length}
+                      className="px-6 py-4 text-center text-gray-500"
+                    >
+                      {t("No memberships found.")}
+                    </td>
+                  </tr>
+                ) : (
+                  table.getRowModel().rows.map((row) => (
+                    <tr key={row.id}>
+                      {row.getVisibleCells().map((cell) => (
+                        <td
+                          key={cell.id}
+                          className="px-6 py-4 whitespace-nowrap text-sm"
+                        >
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext()
+                          )}
+                        </td>
+                      ))}
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
-        ) : (
-          <div className="p-6 text-center">
-            <p className="text-gray-500">{t("No memberships found.")}</p>
-          </div>
         )}
+
+        {/* Pagination Controls */}
+        <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-t">
+          <div className="flex-1 flex items-center gap-2">
+            <button
+              className="px-2 py-1 border rounded disabled:opacity-50"
+              onClick={() => table.setPageIndex(0)}
+              disabled={!table.getCanPreviousPage()}
+            >
+              {"<<"}
+            </button>
+            <button
+              className="px-2 py-1 border rounded disabled:opacity-50"
+              onClick={() => table.previousPage()}
+              disabled={!table.getCanPreviousPage()}
+            >
+              {t("Previous")}
+            </button>
+            <button
+              className="px-2 py-1 border rounded disabled:opacity-50"
+              onClick={() => table.nextPage()}
+              disabled={!table.getCanNextPage()}
+            >
+              {t("Next")}
+            </button>
+            <button
+              className="px-2 py-1 border rounded disabled:opacity-50"
+              onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+              disabled={!table.getCanNextPage()}
+            >
+              {">>"}
+            </button>
+          </div>
+          <span>
+            {t("Page")}{" "}
+            <strong>
+              {table.getState().pagination.pageIndex + 1} /{" "}
+              {table.getPageCount()}
+            </strong>
+          </span>
+          <select
+            value={table.getState().pagination.pageSize}
+            onChange={(e) => table.setPageSize(Number(e.target.value))}
+            className="ml-2 border rounded px-2 py-1"
+          >
+            {[5, 10, 20, 50].map((pageSize) => (
+              <option key={pageSize} value={pageSize}>
+                {t("Show")} {pageSize}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
     </div>
   );

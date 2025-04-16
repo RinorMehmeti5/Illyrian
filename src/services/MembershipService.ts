@@ -52,8 +52,16 @@ const MembershipService = {
   // Get membership types for dropdown options
   getMembershipTypes: () =>
     apiClient.get<
-      { id: number; name: string; durationInDays: number; price: number }[]
-    >("MembershipType"),
+      {
+        membershipTypeID: number;
+        name: string;
+        description: string;
+        durationInDays: number;
+        price: number;
+        formattedDuration: string;
+        formattedPrice: string;
+      }[]
+    >("Membership/types"),
 };
 
 export default MembershipService;

@@ -7,10 +7,13 @@ import MembershipService, {
 } from "../services/MembershipService";
 
 interface MembershipType {
-  id: number;
+  membershipTypeID: number;
   name: string;
+  description: string;
   durationInDays: number;
   price: number;
+  formattedDuration: string;
+  formattedPrice: string;
 }
 
 interface MembershipState {
