@@ -1,12 +1,14 @@
+// admin/AdminMembership/AdminMemberships.tsx
 import React, { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
-import useMembershipStore from "../../store/membershipStore";
+import useMembershipStore from "../../../store/membershipStore";
 import {
   CreateMembershipRequest,
   UpdateMembershipRequest,
-} from "../../services/MembershipService";
-import useAuthStore from "../../store/authStore";
+  MembershipDTO,
+} from "../../../services/MembershipService";
+import useAuthStore from "../../../store/authStore";
 import {
   useReactTable,
   getCoreRowModel,
@@ -17,6 +19,9 @@ import {
   ColumnDef,
   SortingState,
 } from "@tanstack/react-table";
+import MembershipForm from "./MembershipForm";
+import MembershipModal from "./MembershipModal";
+import { MembershipFormValues } from "./types";
 
 const AdminMemberships: React.FC = () => {
   const { t } = useTranslation();
@@ -37,19 +42,21 @@ const AdminMemberships: React.FC = () => {
 
   const { userRoles, username } = useAuthStore();
 
-  const [showMembershipForm, setShowMembershipForm] = useState(false);
-  const [formData, setFormData] = useState<
-    CreateMembershipRequest & { membershipId?: number }
-  >({
-    userId: "",
-    membershipTypeId: 1,
-    startDate: new Date().toISOString().split("T")[0],
-    endDate: new Date(new Date().setMonth(new Date().getMonth() + 1))
-      .toISOString()
-      .split("T")[0],
-    isActive: true,
-  });
+  // Modal state
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+
+  // Form initial values
+  const [initialFormValues, setInitialFormValues] =
+    useState<MembershipFormValues>({
+      userId: "",
+      membershipTypeId: 1,
+      startDate: new Date().toISOString().split("T")[0],
+      endDate: new Date(new Date().setMonth(new Date().getMonth() + 1))
+        .toISOString()
+        .split("T")[0],
+      isActive: true,
+    });
 
   // TanStack Table state
   const [globalFilter, setGlobalFilter] = useState("");
@@ -69,68 +76,29 @@ const AdminMemberships: React.FC = () => {
     }
   }, [error, clearError]);
 
-  // Populate form when editing a membership
-  useEffect(() => {
-    if (selectedMembership && isEditing) {
-      setFormData({
-        membershipId: selectedMembership.membershipId,
-        userId: selectedMembership.userId,
-        membershipTypeId: selectedMembership.membershipTypeId,
-        startDate: new Date(selectedMembership.startDate)
-          .toISOString()
-          .split("T")[0],
-        endDate: new Date(selectedMembership.endDate)
-          .toISOString()
-          .split("T")[0],
-        isActive: selectedMembership.isActive,
-      });
-    }
-  }, [selectedMembership, isEditing]);
-
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    const { name, value, type } = e.target;
-
-    if (type === "checkbox") {
-      const target = e.target as HTMLInputElement;
-      setFormData((prev) => ({
-        ...prev,
-        [name]: target.checked,
-      }));
-    } else if (name === "membershipTypeId") {
-      setFormData((prev) => ({
-        ...prev,
-        [name]: parseInt(value, 10),
-      }));
-    } else {
-      setFormData((prev) => ({
-        ...prev,
-        [name]: value,
-      }));
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
+  // Handle form submission
+  const handleFormSubmit = async (values: MembershipFormValues) => {
     let success = false;
 
-    if (isEditing && selectedMembership) {
+    if (isEditing && values.membershipId) {
       const updateData: UpdateMembershipRequest = {
-        membershipId: selectedMembership.membershipId,
-        userId: formData.userId,
-        membershipTypeId: formData.membershipTypeId,
-        startDate: formData.startDate,
-        endDate: formData.endDate,
-        isActive: formData.isActive,
+        membershipId: values.membershipId,
+        userId: values.userId,
+        membershipTypeId: values.membershipTypeId,
+        startDate: values.startDate,
+        endDate: values.endDate,
+        isActive: values.isActive,
       };
-      success = await updateMembership(
-        selectedMembership.membershipId,
-        updateData
-      );
+      success = await updateMembership(values.membershipId, updateData);
     } else {
-      success = await createMembership(formData);
+      const createData: CreateMembershipRequest = {
+        userId: values.userId,
+        membershipTypeId: values.membershipTypeId,
+        startDate: values.startDate,
+        endDate: values.endDate,
+        isActive: values.isActive,
+      };
+      success = await createMembership(createData);
     }
 
     if (success) {
@@ -139,16 +107,26 @@ const AdminMemberships: React.FC = () => {
           ? t("Membership updated successfully")
           : t("Membership created successfully")
       );
-      resetForm();
+      closeModal();
     }
   };
 
-  const handleEditMembership = (membership: any) => {
+  // Handle edit membership button click
+  const handleEditMembership = (membership: MembershipDTO) => {
     setSelectedMembership(membership);
+    setInitialFormValues({
+      membershipId: membership.membershipId,
+      userId: membership.userId,
+      membershipTypeId: membership.membershipTypeId,
+      startDate: new Date(membership.startDate).toISOString().split("T")[0],
+      endDate: new Date(membership.endDate).toISOString().split("T")[0],
+      isActive: membership.isActive,
+    });
     setIsEditing(true);
-    setShowMembershipForm(true);
+    setIsModalOpen(true);
   };
 
+  // Handle delete membership button click
   const handleDeleteMembership = async (id: number) => {
     if (window.confirm(t("Are you sure you want to delete this membership?"))) {
       const success = await deleteMembership(id);
@@ -158,10 +136,12 @@ const AdminMemberships: React.FC = () => {
     }
   };
 
-  const resetForm = () => {
-    setFormData({
+  // Handle create new membership button click
+  const handleCreateMembership = () => {
+    setInitialFormValues({
       userId: "",
-      membershipTypeId: 1,
+      membershipTypeId:
+        membershipTypes.length > 0 ? membershipTypes[0].membershipTypeID : 1,
       startDate: new Date().toISOString().split("T")[0],
       endDate: new Date(new Date().setMonth(new Date().getMonth() + 1))
         .toISOString()
@@ -169,40 +149,17 @@ const AdminMemberships: React.FC = () => {
       isActive: true,
     });
     setIsEditing(false);
-    setShowMembershipForm(false);
+    setIsModalOpen(true);
+  };
+
+  // Close modal and reset state
+  const closeModal = () => {
+    setIsModalOpen(false);
     setSelectedMembership(null);
   };
 
-  // Calculate end date based on membership type duration
-  const calculateEndDate = (startDate: string, membershipTypeId: number) => {
-    const selectedType = membershipTypes.find(
-      (t) => t.membershipTypeID === membershipTypeId
-    );
-    if (selectedType && startDate) {
-      const start = new Date(startDate);
-      const end = new Date(start);
-      end.setDate(start.getDate() + (selectedType.durationInDays || 30));
-      return end.toISOString().split("T")[0];
-    }
-    return formData.endDate;
-  };
-
-  // Update end date when start date or membership type changes
-  useEffect(() => {
-    if (formData.startDate && formData.membershipTypeId && !isEditing) {
-      const newEndDate = calculateEndDate(
-        formData.startDate,
-        formData.membershipTypeId
-      );
-      setFormData((prev) => ({
-        ...prev,
-        endDate: newEndDate,
-      }));
-    }
-  }, [formData.startDate, formData.membershipTypeId, isEditing]);
-
   // TanStack Table columns
-  const columns = useMemo<ColumnDef<any, any>[]>(
+  const columns = useMemo<ColumnDef<MembershipDTO, any>[]>(
     () => [
       {
         accessorKey: "userFullName",
@@ -295,153 +252,12 @@ const AdminMemberships: React.FC = () => {
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">{t("Membership Management")}</h2>
         <button
-          onClick={() => {
-            resetForm();
-            setShowMembershipForm(!showMembershipForm);
-          }}
+          onClick={handleCreateMembership}
           className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
         >
-          {showMembershipForm ? t("Cancel") : t("Add New Membership")}
+          {t("Add New Membership")}
         </button>
       </div>
-
-      {/* Membership Form */}
-      {showMembershipForm && (
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h3 className="text-xl font-semibold mb-4">
-            {isEditing ? t("Edit Membership") : t("Create New Membership")}
-          </h3>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label
-                htmlFor="userId"
-                className="block text-sm font-medium text-gray-700"
-              >
-                {t("User ID")}
-              </label>
-              <input
-                type="text"
-                id="userId"
-                name="userId"
-                value={formData.userId}
-                onChange={handleInputChange}
-                required
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-                placeholder={t("User ID")}
-              />
-            </div>
-
-            <div>
-              <label
-                htmlFor="membershipTypeId"
-                className="block text-sm font-medium text-gray-700"
-              >
-                {t("Membership Type")}
-              </label>
-              <select
-                id="membershipTypeId"
-                name="membershipTypeId"
-                value={formData.membershipTypeId}
-                onChange={handleInputChange}
-                required
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-              >
-                {membershipTypes.length > 0 ? (
-                  membershipTypes.map((type) => (
-                    <option
-                      key={type.membershipTypeID}
-                      value={type.membershipTypeID}
-                    >
-                      {type.name} ({type.formattedDuration} -{" "}
-                      {type.formattedPrice})
-                    </option>
-                  ))
-                ) : (
-                  <option value="1">{t("Loading membership types...")}</option>
-                )}
-              </select>
-            </div>
-
-            <div>
-              <label
-                htmlFor="startDate"
-                className="block text-sm font-medium text-gray-700"
-              >
-                {t("Start Date")}
-              </label>
-              <input
-                type="date"
-                id="startDate"
-                name="startDate"
-                value={formData.startDate}
-                onChange={handleInputChange}
-                required
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-              />
-            </div>
-
-            <div>
-              <label
-                htmlFor="endDate"
-                className="block text-sm font-medium text-gray-700"
-              >
-                {t("End Date")}
-              </label>
-              <input
-                type="date"
-                id="endDate"
-                name="endDate"
-                value={formData.endDate}
-                onChange={handleInputChange}
-                required
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-              />
-            </div>
-
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                id="isActive"
-                name="isActive"
-                checked={formData.isActive}
-                onChange={(e) =>
-                  setFormData({ ...formData, isActive: e.target.checked })
-                }
-                className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-              />
-              <label
-                htmlFor="isActive"
-                className="ml-2 block text-sm text-gray-900"
-              >
-                {t("Active")}
-              </label>
-            </div>
-
-            <div className="flex justify-end space-x-3 pt-4">
-              <button
-                type="button"
-                onClick={resetForm}
-                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-              >
-                {t("Cancel")}
-              </button>
-              <button
-                type="submit"
-                disabled={isLoading}
-                className={`px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 ${
-                  isLoading ? "opacity-70 cursor-not-allowed" : ""
-                }`}
-              >
-                {isLoading
-                  ? t("Saving...")
-                  : isEditing
-                  ? t("Update")
-                  : t("Create")}
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
 
       {/* Memberships Table */}
       <div className="bg-white shadow-md rounded-lg overflow-hidden">
@@ -596,6 +412,21 @@ const AdminMemberships: React.FC = () => {
           </select>
         </div>
       </div>
+
+      {/* Membership Form Modal */}
+      <MembershipModal
+        isOpen={isModalOpen}
+        onClose={closeModal}
+        title={isEditing ? t("Edit Membership") : t("Create New Membership")}
+      >
+        <MembershipForm
+          initialValues={initialFormValues}
+          onSubmit={handleFormSubmit}
+          membershipTypes={membershipTypes}
+          isLoading={isLoading}
+          isEditing={isEditing}
+        />
+      </MembershipModal>
     </div>
   );
 };

@@ -23,7 +23,7 @@ import Test from "../views/Test";
 // Protected route components
 import ProtectedRoute from "../../components/ui/ProtectedRoute";
 import AdminRoute from "../../components/ui/AdminRoute";
-import AdminMemberships from "../views/admin/AdminMemberships";
+import AdminMemberships from "../views/admin/AdminMembership/AdminMemberships";
 
 const AppRoutes: React.FC = () => {
   const { isAuthenticated, userRoles } = useAuthStore();

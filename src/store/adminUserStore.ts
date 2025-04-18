@@ -1,28 +1,37 @@
 // src/store/adminUserStore.ts
 import { create } from "zustand";
 import AdminUserService, {
-  User,
+  UserDTO,
   CreateUserRequest,
   UpdateUserRequest,
+  ResetPasswordRequest,
+  RoleDTO,
 } from "../services/AdminUserService";
 
 interface AdminUserState {
-  users: User[];
+  users: UserDTO[];
+  roles: RoleDTO[];
   isLoading: boolean;
   error: string | null;
-  selectedUser: User | null;
+  selectedUser: UserDTO | null;
 
   fetchUsers: () => Promise<void>;
+  fetchRoles: () => Promise<void>;
   getUserById: (id: string) => Promise<void>;
   createUser: (userData: CreateUserRequest) => Promise<boolean>;
   updateUser: (id: string, userData: UpdateUserRequest) => Promise<boolean>;
   deleteUser: (id: string) => Promise<boolean>;
-  setSelectedUser: (user: User | null) => void;
+  resetUserPassword: (
+    id: string,
+    request: ResetPasswordRequest
+  ) => Promise<boolean>;
+  setSelectedUser: (user: UserDTO | null) => void;
   clearError: () => void;
 }
 
 const useAdminUserStore = create<AdminUserState>((set, get) => ({
   users: [],
+  roles: [],
   isLoading: false,
   error: null,
   selectedUser: null,
@@ -37,6 +46,21 @@ const useAdminUserStore = create<AdminUserState>((set, get) => ({
       console.error("Error fetching users:", error);
       set({
         error: error instanceof Error ? error.message : "Failed to fetch users",
+        isLoading: false,
+      });
+    }
+  },
+
+  fetchRoles: async () => {
+    set({ isLoading: true, error: null });
+
+    try {
+      const response = await AdminUserService.getRoles();
+      set({ roles: response.data, isLoading: false });
+    } catch (error) {
+      console.error("Error fetching roles:", error);
+      set({
+        error: error instanceof Error ? error.message : "Failed to fetch roles",
         isLoading: false,
       });
     }
@@ -81,7 +105,11 @@ const useAdminUserStore = create<AdminUserState>((set, get) => ({
     set({ isLoading: true, error: null });
 
     try {
-      const response = await AdminUserService.updateUser(id, userData);
+      await AdminUserService.updateUser(id, userData);
+
+      // Fetch the updated user to get the latest data
+      const response = await AdminUserService.getUserById(id);
+
       set((state) => ({
         users: state.users.map((user) =>
           user.id === id ? response.data : user
@@ -122,7 +150,25 @@ const useAdminUserStore = create<AdminUserState>((set, get) => ({
     }
   },
 
-  setSelectedUser: (user: User | null) => set({ selectedUser: user }),
+  resetUserPassword: async (id: string, request: ResetPasswordRequest) => {
+    set({ isLoading: true, error: null });
+
+    try {
+      await AdminUserService.resetUserPassword(id, request);
+      set({ isLoading: false });
+      return true;
+    } catch (error) {
+      console.error("Error resetting password:", error);
+      set({
+        error:
+          error instanceof Error ? error.message : "Failed to reset password",
+        isLoading: false,
+      });
+      return false;
+    }
+  },
+
+  setSelectedUser: (user: UserDTO | null) => set({ selectedUser: user }),
 
   clearError: () => set({ error: null }),
 }));
