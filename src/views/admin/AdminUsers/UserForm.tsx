@@ -1,3 +1,4 @@
+// src/views/admin/AdminUsers/UserForm.tsx
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { Formik, Form, Field, ErrorMessage } from "formik";
@@ -7,6 +8,7 @@ import { UserFormProps, UserFormValues } from "./types";
 const UserForm: React.FC<UserFormProps> = ({
   initialValues,
   onSubmit,
+  onCancel,
   roles,
   isLoading,
   isEditing,
@@ -354,9 +356,7 @@ const UserForm: React.FC<UserFormProps> = ({
           <div className="flex justify-end space-x-3 pt-4">
             <button
               type="button"
-              onClick={() => {
-                // Close form logic here
-              }}
+              onClick={onCancel}
               className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
             >
               {t("Cancel")}

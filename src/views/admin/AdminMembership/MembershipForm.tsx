@@ -9,6 +9,7 @@ import { MembershipFormProps, MembershipFormValues } from "./types";
 const MembershipForm: React.FC<MembershipFormProps> = ({
   initialValues,
   onSubmit,
+  onCancel,
   membershipTypes,
   isLoading,
   isEditing,
@@ -195,9 +196,7 @@ const MembershipForm: React.FC<MembershipFormProps> = ({
             <div className="flex justify-end space-x-3 pt-4">
               <button
                 type="button"
-                onClick={() => {
-                  // Close form logic here
-                }}
+                onClick={onCancel}
                 className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
               >
                 {t("Cancel")}

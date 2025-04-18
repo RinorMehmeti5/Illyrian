@@ -25,6 +25,7 @@ import {
   Dashboard as DashboardIcon,
   People as PeopleIcon,
   Settings as SettingsIcon,
+  Payment as PaymentIcon,
 } from "@mui/icons-material";
 import adminTheme from "../../src/theme/adminTheme";
 import useAuthStore from "../../src/store/authStore";
@@ -128,7 +129,7 @@ const MaterialAdminLayout = () => {
   const menuItems = [
     { text: "Dashboard", icon: <DashboardIcon />, path: "/admin/dashboard" },
     { text: "Users", icon: <PeopleIcon />, path: "/admin/users" },
-    { text: "Memberships", icon: <PeopleIcon />, path: "/admin/memeberships" },
+    { text: "Memberships", icon: <PaymentIcon />, path: "/admin/memeberships" },
     { text: "Settings", icon: <SettingsIcon />, path: "/admin/settings" },
   ];
 

@@ -1,4 +1,5 @@
 // admin/AdminMembership/AdminMemberships.tsx
+import { Fragment } from "react";
 import React, { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
@@ -22,6 +23,12 @@ import {
 import MembershipForm from "./MembershipForm";
 import MembershipModal from "./MembershipModal";
 import { MembershipFormValues } from "./types";
+import { Menu, Transition } from "@headlessui/react";
+import {
+  ChevronDownIcon,
+  PencilIcon,
+  TrashIcon,
+} from "@heroicons/react/24/outline";
 
 const AdminMemberships: React.FC = () => {
   const { t } = useTranslation();
@@ -206,24 +213,70 @@ const AdminMemberships: React.FC = () => {
           ),
         enableSorting: true,
       },
+      // 2. Replace the "actions" column definition in the columns array:
       {
         id: "actions",
         header: t("Actions"),
         cell: ({ row }) => (
-          <div className="flex gap-2 justify-end">
-            <button
-              onClick={() => handleEditMembership(row.original)}
-              className="text-primary-600 hover:text-primary-900 mr-3"
+          <Menu as="div" className="relative inline-block text-left">
+            <div>
+              <Menu.Button className="inline-flex justify-center w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                {t("Actions")}
+                <ChevronDownIcon
+                  className="w-5 h-5 ml-2 -mr-1 text-gray-500"
+                  aria-hidden="true"
+                />
+              </Menu.Button>
+            </div>
+            <Transition
+              as={Fragment}
+              enter="transition ease-out duration-100"
+              enterFrom="transform opacity-0 scale-95"
+              enterTo="transform opacity-100 scale-100"
+              leave="transition ease-in duration-75"
+              leaveFrom="transform opacity-100 scale-100"
+              leaveTo="transform opacity-0 scale-95"
             >
-              {t("Edit")}
-            </button>
-            <button
-              onClick={() => handleDeleteMembership(row.original.membershipId)}
-              className="text-red-600 hover:text-red-900"
-            >
-              {t("Delete")}
-            </button>
-          </div>
+              <Menu.Items className="absolute right-0 z-10 w-56 mt-2 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                <div className="py-1">
+                  <Menu.Item>
+                    {({ active }) => (
+                      <button
+                        onClick={() => handleEditMembership(row.original)}
+                        className={`${
+                          active ? "bg-gray-100 text-gray-900" : "text-gray-700"
+                        } group flex items-center w-full px-4 py-2 text-sm`}
+                      >
+                        <PencilIcon
+                          className="w-5 h-5 mr-3 text-primary-500"
+                          aria-hidden="true"
+                        />
+                        {t("Edit")}
+                      </button>
+                    )}
+                  </Menu.Item>
+                  <Menu.Item>
+                    {({ active }) => (
+                      <button
+                        onClick={() =>
+                          handleDeleteMembership(row.original.membershipId)
+                        }
+                        className={`${
+                          active ? "bg-gray-100 text-gray-900" : "text-gray-700"
+                        } group flex items-center w-full px-4 py-2 text-sm`}
+                      >
+                        <TrashIcon
+                          className="w-5 h-5 mr-3 text-red-500"
+                          aria-hidden="true"
+                        />
+                        {t("Delete")}
+                      </button>
+                    )}
+                  </Menu.Item>
+                </div>
+              </Menu.Items>
+            </Transition>
+          </Menu>
         ),
         enableSorting: false,
       },
@@ -260,153 +313,191 @@ const AdminMemberships: React.FC = () => {
       </div>
 
       {/* Memberships Table */}
-      <div className="bg-white shadow-md rounded-lg overflow-hidden">
-        <div className="px-4 py-5 sm:px-6 border-b flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-          <div>
-            <h3 className="text-lg font-medium leading-6 text-gray-900">
-              {t("Memberships")}
-            </h3>
-            <p className="mt-1 max-w-2xl text-sm text-gray-500">
-              {t("Manage all memberships from here.")}
-            </p>
+      <div className="bg-white shadow-sm rounded-md overflow-hidden">
+        <div className="flex justify-between items-center px-4 py-3 border-b">
+          <h3 className="text-base font-medium text-gray-700">
+            {t("Memberships")}
+          </h3>
+          <div className="relative w-64">
+            <input
+              type="text"
+              value={globalFilter ?? ""}
+              onChange={(e) => setGlobalFilter(e.target.value)}
+              placeholder={t("Search...")}
+              className="w-full text-sm py-1.5 pl-8 pr-3 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+            />
+            <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-4 w-4 text-gray-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+            </div>
           </div>
-          <input
-            type="text"
-            value={globalFilter ?? ""}
-            onChange={(e) => setGlobalFilter(e.target.value)}
-            placeholder={t("Search...")}
-            className="mt-2 sm:mt-0 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-          />
         </div>
 
-        {isLoading && !memberships.length ? (
-          <div className="p-6 text-center">
-            <svg
-              className="animate-spin mx-auto h-8 w-8 text-primary-600"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-              ></circle>
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              ></path>
-            </svg>
-            <p className="mt-2">{t("Loading memberships...")}</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                {table.getHeaderGroups().map((headerGroup) => (
-                  <tr key={headerGroup.id}>
-                    {headerGroup.headers.map((header) => (
-                      <th
-                        key={header.id}
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer select-none"
-                        onClick={header.column.getToggleSortingHandler()}
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <tr key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
+                    <th
+                      key={header.id}
+                      onClick={header.column.getToggleSortingHandler()}
+                      className="bg-gray-50 px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                    >
+                      <div className="flex items-center space-x-1">
+                        <span>
+                          {flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                        </span>
+                        {header.column.getCanSort() && (
+                          <span className="text-gray-400">
+                            {{
+                              asc: " ↑",
+                              desc: " ↓",
+                            }[header.column.getIsSorted() as string] ?? " ↕"}
+                          </span>
+                        )}
+                      </div>
+                    </th>
+                  ))}
+                </tr>
+              ))}
+            </thead>
+            <tbody className="divide-y divide-gray-200 bg-white">
+              {isLoading && !memberships.length ? (
+                <tr>
+                  <td
+                    colSpan={columns.length}
+                    className="px-4 py-3 text-center text-sm text-gray-500"
+                  >
+                    <div className="p-6 text-center">
+                      <svg
+                        className="animate-spin mx-auto h-8 w-8 text-primary-600"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                      <p className="mt-2">{t("Loading memberships...")}</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : table.getRowModel().rows.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={columns.length}
+                    className="px-4 py-3 text-center text-sm text-gray-500"
+                  >
+                    {t("No memberships found.")}
+                  </td>
+                </tr>
+              ) : (
+                table.getRowModel().rows.map((row) => (
+                  <tr
+                    key={row.id}
+                    className="hover:bg-gray-50 transition-colors duration-150 ease-in-out"
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <td
+                        key={cell.id}
+                        className="px-4 py-2 text-sm text-gray-600 font-normal whitespace-nowrap"
                       >
                         {flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
+                          cell.column.columnDef.cell,
+                          cell.getContext()
                         )}
-                        {{
-                          asc: " ▲",
-                          desc: " ▼",
-                        }[header.column.getIsSorted() as string] ?? null}
-                      </th>
+                      </td>
                     ))}
                   </tr>
-                ))}
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {table.getRowModel().rows.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={columns.length}
-                      className="px-6 py-4 text-center text-gray-500"
-                    >
-                      {t("No memberships found.")}
-                    </td>
-                  </tr>
-                ) : (
-                  table.getRowModel().rows.map((row) => (
-                    <tr key={row.id}>
-                      {row.getVisibleCells().map((cell) => (
-                        <td
-                          key={cell.id}
-                          className="px-6 py-4 whitespace-nowrap text-sm"
-                        >
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext()
-                          )}
-                        </td>
-                      ))}
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
 
-        {/* Pagination Controls */}
-        <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-t">
-          <div className="flex-1 flex items-center gap-2">
+        {/* Compact Pagination */}
+        <div className="bg-white px-4 py-2 border-t border-gray-200 flex items-center justify-between">
+          <div className="flex items-center space-x-2 text-sm text-gray-500">
             <button
-              className="px-2 py-1 border rounded disabled:opacity-50"
-              onClick={() => table.setPageIndex(0)}
-              disabled={!table.getCanPreviousPage()}
-            >
-              {"<<"}
-            </button>
-            <button
-              className="px-2 py-1 border rounded disabled:opacity-50"
               onClick={() => table.previousPage()}
               disabled={!table.getCanPreviousPage()}
+              className="p-1 rounded border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {t("Previous")}
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 19l-7-7 7-7"
+                />
+              </svg>
             </button>
+            <span className="text-xs">
+              {t("Page")} {table.getState().pagination.pageIndex + 1} {t("of")}{" "}
+              {table.getPageCount()}
+            </span>
             <button
-              className="px-2 py-1 border rounded disabled:opacity-50"
               onClick={() => table.nextPage()}
               disabled={!table.getCanNextPage()}
+              className="p-1 rounded border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {t("Next")}
-            </button>
-            <button
-              className="px-2 py-1 border rounded disabled:opacity-50"
-              onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-              disabled={!table.getCanNextPage()}
-            >
-              {">>"}
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
             </button>
           </div>
-          <span>
-            {t("Page")}{" "}
-            <strong>
-              {table.getState().pagination.pageIndex + 1} /{" "}
-              {table.getPageCount()}
-            </strong>
-          </span>
           <select
             value={table.getState().pagination.pageSize}
             onChange={(e) => table.setPageSize(Number(e.target.value))}
-            className="ml-2 border rounded px-2 py-1"
+            className="text-xs border border-gray-300 rounded px-1 py-1 bg-white"
           >
             {[5, 10, 20, 50].map((pageSize) => (
               <option key={pageSize} value={pageSize}>
-                {t("Show")} {pageSize}
+                {pageSize} / {t("page")}
               </option>
             ))}
           </select>
@@ -422,6 +513,7 @@ const AdminMemberships: React.FC = () => {
         <MembershipForm
           initialValues={initialFormValues}
           onSubmit={handleFormSubmit}
+          onCancel={closeModal}
           membershipTypes={membershipTypes}
           isLoading={isLoading}
           isEditing={isEditing}

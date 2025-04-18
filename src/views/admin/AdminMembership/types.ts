@@ -18,6 +18,7 @@ export interface MembershipFormValues {
 export interface MembershipFormProps {
   initialValues: MembershipFormValues;
   onSubmit: (values: MembershipFormValues) => Promise<void>;
+  onCancel: () => void; // Add this line
   membershipTypes: Array<{
     membershipTypeID: number;
     name: string;

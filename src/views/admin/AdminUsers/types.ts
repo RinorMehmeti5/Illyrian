@@ -20,6 +20,7 @@ export interface UserFormValues {
 export interface UserFormProps {
   initialValues: UserFormValues;
   onSubmit: (values: UserFormValues) => Promise<void>;
+  onCancel: () => void;
   roles: RoleDTO[];
   isLoading: boolean;
   isEditing: boolean;
