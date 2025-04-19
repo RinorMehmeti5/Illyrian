@@ -1,8 +1,8 @@
 // components/layouts/PublicLayout.tsx
 import React from "react";
 import { Outlet } from "react-router-dom";
-import Header from "../../src/views/shared/Header";
-import Footer from "../../src/views/shared/Footer";
+import Header from "../../views/shared/Header";
+import Footer from "../../views/shared/Footer";
 
 const PublicLayout: React.FC = () => {
   return (

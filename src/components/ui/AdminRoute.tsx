@@ -1,7 +1,7 @@
 // components/ui/AdminRoute.tsx
 import React from "react";
 import { Navigate, Outlet } from "react-router-dom";
-import useAuthStore from "../../src/store/authStore";
+import useAuthStore from "../../store/authStore";
 
 const AdminRoute: React.FC = () => {
   const { isAuthenticated, userRoles } = useAuthStore();

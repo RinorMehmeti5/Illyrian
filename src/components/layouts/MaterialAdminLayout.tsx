@@ -27,8 +27,8 @@ import {
   Settings as SettingsIcon,
   Payment as PaymentIcon,
 } from "@mui/icons-material";
-import adminTheme from "../../src/theme/adminTheme";
-import useAuthStore from "../../src/store/authStore";
+import adminTheme from "../../theme/adminTheme";
+import useAuthStore from "../../store/authStore";
 
 // Import Roboto font
 import "@fontsource/roboto/300.css";

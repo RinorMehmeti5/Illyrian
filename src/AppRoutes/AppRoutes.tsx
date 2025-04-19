@@ -4,8 +4,8 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import useAuthStore from "../store/authStore";
 
 // Layouts
-import PublicLayout from "../../components/layouts/PublicLayout";
-import MaterialAdminLayout from "../../components/layouts/MaterialAdminLayout";
+import PublicLayout from "../components/layouts/PublicLayout";
+import MaterialAdminLayout from "../components/layouts/MaterialAdminLayout";
 
 // Public views
 import Home from "../views/Home";
@@ -21,8 +21,8 @@ import AdminUsers from "../views/admin/AdminUsers";
 import Test from "../views/Test";
 
 // Protected route components
-import ProtectedRoute from "../../components/ui/ProtectedRoute";
-import AdminRoute from "../../components/ui/AdminRoute";
+import ProtectedRoute from "../components/ui/ProtectedRoute";
+import AdminRoute from "../components/ui/AdminRoute";
 import AdminMemberships from "../views/admin/AdminMembership/AdminMemberships";
 
 const AppRoutes: React.FC = () => {

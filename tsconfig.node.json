@@ -1,3 +1,4 @@
+// tsxonfig.node.json
 {
   "compilerOptions": {
     "composite": true,
