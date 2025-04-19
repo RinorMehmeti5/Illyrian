@@ -9,6 +9,7 @@ import * as Yup from "yup";
 import AuthService from "../../services/AuthService";
 import useAuthStore from "../../store/authStore";
 import { extractRolesFromToken } from "../../utils/authHelpers";
+import { BorderBeam } from "../../components/magicui/border-beam";
 
 const Login: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -89,7 +90,7 @@ const Login: React.FC = () => {
         variants={containerVariants}
         className="flex-1 flex items-center justify-center p-8 bg-white"
       >
-        <div className="max-w-md w-full">
+        <div className="max-w-md w-full relative overflow-hidden border-2 border-transparent rounded-xl p-5">
           <motion.div variants={itemVariants} className="text-center mb-8">
             <img
               src="/photos/LOGOO.png"
@@ -280,6 +281,7 @@ const Login: React.FC = () => {
               </Link>
             </p>
           </motion.div>
+          <BorderBeam duration={8} size={300} />
         </div>
       </motion.div>
 
@@ -288,16 +290,16 @@ const Login: React.FC = () => {
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.8, delay: 0.3 }}
-        className="hidden md:block flex-1 bg-black relative overflow-hidden"
+        className="hidden md:block flex-1 bg-black relative overflow-hidden m-10 rounded-xl"
       >
         <div className="absolute inset-0 bg-gradient-to-tr from-black via-black/70 to-transparent z-10"></div>
         <div
           className="absolute inset-0 bg-cover bg-center z-0"
           style={{
-            backgroundImage: "url('/photos/gym-login-background.jpg')",
+            backgroundImage: "url('/photos/gym1.jfif')",
           }}
         ></div>
-        <div className="absolute inset-0 flex items-center justify-center z-20">
+        <div className="absolute inset-0 flex items-center justify-center z-20 ">
           <div className="text-center text-white p-8 max-w-md">
             <motion.h2
               initial={{ opacity: 0, y: 20 }}

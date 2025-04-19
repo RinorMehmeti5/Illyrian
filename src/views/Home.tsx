@@ -1,4 +1,3 @@
-// src/views/Home.tsx
 import React, { useState, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -7,6 +6,32 @@ import {
   useTransform,
   AnimatePresence,
 } from "framer-motion";
+import { Marquee } from "../components/magicui/marquee";
+import { Pointer } from "../components/magicui/pointer";
+import { LuDumbbell } from "react-icons/lu";
+
+// ReviewCard component for the Marquee
+const ReviewCard: React.FC<{
+  img: string;
+  name: string;
+  username: string;
+  body: string;
+}> = ({ img, name, username, body }) => {
+  return (
+    <figure className="relative h-full w-64 cursor-pointer overflow-hidden rounded-xl border p-4 border-gray-950/[.1] bg-[#FFFDF2] hover:bg-[#FFFDF2]/90 dark:border-white/10">
+      <div className="flex flex-row items-center gap-2">
+        <img className="rounded-full" width="32" height="32" alt="" src={img} />
+        <div className="flex flex-col">
+          <figcaption className="text-sm font-medium text-black">
+            {name}
+          </figcaption>
+          <p className="text-xs font-medium text-black/60">{username}</p>
+        </div>
+      </div>
+      <blockquote className="mt-2 text-sm">{body}</blockquote>
+    </figure>
+  );
+};
 
 const Home: React.FC = () => {
   const { t } = useTranslation();
@@ -141,6 +166,49 @@ const Home: React.FC = () => {
     },
   ];
 
+  // Quick reviews for the Marquee component
+  const quickReviews = [
+    {
+      name: "Alex",
+      username: "@alexfitness",
+      body: "Lost 15lbs in just 2 months! Best trainers ever.",
+      img: "/api/placeholder/40/40",
+    },
+    {
+      name: "Maria",
+      username: "@maria_strong",
+      body: "The nutrition plan changed my relationship with food. Amazing results!",
+      img: "/api/placeholder/40/40",
+    },
+    {
+      name: "Jason",
+      username: "@jasonlift",
+      body: "From barely being able to run to completing a half-marathon. Thank you!",
+      img: "/api/placeholder/40/40",
+    },
+    {
+      name: "Kim",
+      username: "@kim_fitness",
+      body: "The community here keeps me accountable. Love the support!",
+      img: "/api/placeholder/40/40",
+    },
+    {
+      name: "Carlos",
+      username: "@carlos_fit",
+      body: "Premium membership is worth every penny. Can't imagine training elsewhere now.",
+      img: "/api/placeholder/40/40",
+    },
+    {
+      name: "Tina",
+      username: "@tinahealth",
+      body: "Group classes are so much fun! I look forward to them every week.",
+      img: "/api/placeholder/40/40",
+    },
+  ];
+
+  const firstRow = quickReviews.slice(0, quickReviews.length / 2);
+  const secondRow = quickReviews.slice(quickReviews.length / 2);
+
   // Animation variants
   const heroVariants = {
     hidden: { opacity: 0 },
@@ -235,11 +303,7 @@ const Home: React.FC = () => {
   };
 
   return (
-    <motion.div
-      ref={containerRef}
-      style={{ backgroundColor }}
-      className="pt-16" // Add padding for fixed header
-    >
+    <motion.div ref={containerRef} style={{ backgroundColor }} className="">
       {/* Hero Section with Background */}
       <motion.section
         className="min-h-screen flex items-center relative overflow-hidden"
@@ -323,7 +387,11 @@ const Home: React.FC = () => {
 
       {/* Feature Cards Section */}
       <section className="py-20 bg-[#FFFDF2]">
-        <div className="w-full px-8">
+        <div className="w-full px-8 relative">
+          <Pointer>
+            {/* Dumbbell SVG */}
+            <LuDumbbell className="text-3xl text-gray-800 dark:text-gray-900" />
+          </Pointer>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -637,8 +705,43 @@ const Home: React.FC = () => {
         </div>
       </section>
 
+      {/* New Social Proof Marquee Section */}
+      <section className="py-16 bg-[#FFFDF2]">
+        <div className="w-full px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true, margin: "-100px" }}
+            className="text-center mb-12"
+          >
+            <h2 className="text-4xl font-bold text-black mb-4">
+              {t("Member Success Stories")}
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              {t("Real results from our dedicated community")}
+            </p>
+          </motion.div>
+
+          <div className="relative flex w-full flex-col items-center justify-center overflow-hidden">
+            <Marquee className="[--duration:20s]" pauseOnHover>
+              {firstRow.map((review) => (
+                <ReviewCard key={review.username} {...review} />
+              ))}
+            </Marquee>
+            <Marquee reverse className="[--duration:20s]" pauseOnHover>
+              {secondRow.map((review) => (
+                <ReviewCard key={review.username} {...review} />
+              ))}
+            </Marquee>
+            <div className="pointer-events-none absolute inset-y-0 left-0 w-1/4 bg-gradient-to-r from-[#FFFDF2]"></div>
+            <div className="pointer-events-none absolute inset-y-0 right-0 w-1/4 bg-gradient-to-l from-[#FFFDF2]"></div>
+          </div>
+        </div>
+      </section>
+
       {/* Call to Action Section */}
-      <section className="py-20 bg-[#FFFDF2]">
+      <section className="py-20 bg-black">
         <div className="w-full px-8">
           <motion.div
             initial={{ opacity: 0 }}
@@ -647,16 +750,16 @@ const Home: React.FC = () => {
             viewport={{ once: true }}
             className="text-center"
           >
-            <h2 className="text-4xl font-bold mb-6 text-black">
+            <h2 className="text-4xl font-bold mb-6 text-white">
               {t("Ready to Start Your Fitness Journey?")}
             </h2>
-            <p className="text-xl mb-8 max-w-2xl mx-auto text-gray-600">
+            <p className="text-xl mb-8 max-w-2xl mx-auto text-gray-300">
               {t(
                 "Join our community today and transform your life with our expert guidance and support."
               )}
             </p>
             <motion.button
-              className="px-8 py-3 bg-black text-white font-semibold rounded-md text-lg shadow-lg"
+              className="px-8 py-3 bg-[#FFFDF2] text-black font-semibold rounded-md text-lg shadow-lg"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
