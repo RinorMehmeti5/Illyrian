@@ -31,6 +31,8 @@ export default {
           900: "#0f172a",
           950: "#020617",
         },
+        foreground: "hsl(var(--foreground))",
+        background: "hsl(var(--background))",
       },
       keyframes: {
         marquee: {
@@ -45,11 +47,19 @@ export default {
           from: { transform: "translateY(0)" },
           to: { transform: "translateY(calc(-100% - var(--gap)))" },
         },
+        // Match the ripple animation from index.css
+        ripple: {
+          "0%, 100%": { transform: "translate(-50%, -50%) scale(1)" },
+          "50%": { transform: "translate(-50%, -50%) scale(0.9)" },
+        },
       },
       animation: {
         marquee: "marquee var(--duration) linear infinite",
         "marquee-reverse": "marquee-reverse var(--duration) linear infinite",
         "marquee-vertical": "marquee-vertical var(--duration) linear infinite",
+        // Use the CSS variable from index.css for the ripple animation
+        ripple:
+          "ripple var(--duration, 2s) ease calc(var(--i, 0)*.2s) infinite",
       },
     },
   },

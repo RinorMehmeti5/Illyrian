@@ -7,6 +7,8 @@ import { motion } from "framer-motion";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import axios from "axios";
+import { CoolMode } from "../../components/magicui/cool-mode";
+import { FaCircle } from "react-icons/fa";
 
 const Register: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -91,43 +93,57 @@ const Register: React.FC = () => {
   return (
     <>
       <div className="min-h-screen flex flex-col md:flex-row relative overflow-hidden">
-        {/* Left side image - hidden on mobile, visible on md breakpoint and up */}
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.8, delay: 0.3 }}
-          className="hidden md:block flex-1 bg-black relative overflow-hidden m-10 rounded-2xl"
-        >
-          <div className="absolute inset-0 bg-gradient-to-tr from-black via-black/70 to-transparent z-10"></div>
-          <div
-            className="absolute inset-0 bg-cover bg-center z-0"
-            style={{
-              backgroundImage: "url('/photos/gym3.jpeg')",
-            }}
-          ></div>
-          <div className="absolute inset-0 flex items-center justify-center z-20">
-            <div className="text-center text-white p-8 max-w-md">
-              <motion.h2
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.6 }}
-                className="text-4xl font-bold mb-4"
-              >
-                {t("Join Our Fitness Community")}
-              </motion.h2>
-              <motion.p
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.8 }}
-                className="text-xl"
-              >
-                {t(
-                  "Start your fitness journey today with personalized training programs"
-                )}
-              </motion.p>
+        {/* Left side image with CoolMode */}
+        <CoolMode>
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8, delay: 0.3 }}
+            className="hidden md:block flex-1 bg-black relative overflow-hidden m-10 rounded-2xl cursor-pointer"
+          >
+            <div className="absolute inset-0 bg-gradient-to-tr from-black via-black/70 to-transparent z-10"></div>
+            <div
+              className="absolute inset-0 bg-cover bg-center z-0"
+              style={{
+                backgroundImage: "url('/photos/gym3.jpeg')",
+              }}
+            ></div>
+            <div className="absolute inset-0 flex items-center justify-center z-20">
+              <div className="text-center text-white p-8 max-w-md">
+                <motion.h2
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.6 }}
+                  className="text-4xl font-bold mb-4"
+                >
+                  {t("Join Our Fitness Community")}
+                </motion.h2>
+                <motion.p
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.8 }}
+                  className="text-xl"
+                >
+                  {t(
+                    "Start your fitness journey today with personalized training programs"
+                  )}
+                </motion.p>
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 1.0 }}
+                  className="mt-6 flex items-center justify-center"
+                >
+                  <p className="text-sm text-white/80 mr-2">
+                    Click anywhere to create flying circles!
+                  </p>
+                  <FaCircle className="text-white w-5 h-5" />
+                </motion.div>
+              </div>
             </div>
-          </div>
-        </motion.div>
+          </motion.div>
+        </CoolMode>
+
         {/* Right side form */}
         <motion.div
           initial="hidden"

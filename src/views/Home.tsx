@@ -1,3 +1,4 @@
+//src/views/Home.tsx
 import React, { useState, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -10,6 +11,7 @@ import { Marquee } from "../components/magicui/marquee";
 import { Pointer } from "../components/magicui/pointer";
 import { LuDumbbell } from "react-icons/lu";
 import HeroCarousel from "../components/ui/HeroCarousel"; // Import the new component
+import { BorderBeam } from "../components/magicui/border-beam";
 
 // ReviewCard component for the Marquee
 const ReviewCard: React.FC<{
@@ -55,7 +57,7 @@ const Home: React.FC = () => {
   const heroSlides = [
     {
       id: 1,
-      backgroundImage: "/photos/background.jpg", // Replace with your actual image paths
+      backgroundImage: "/photos/background.jpg", // Using placeholder until you have real images
       title: "Transform Your Fitness Journey",
       description:
         "Achieve your goals with our comprehensive management solution and professional guidance.",
@@ -358,7 +360,7 @@ const Home: React.FC = () => {
         </div>
       </section>
 
-      {/* Membership Plans Table Section */}
+      {/* Membership Plans Cards Section */}
       <section className="py-20 bg-black">
         <div className="w-full px-8">
           <motion.div
@@ -376,62 +378,123 @@ const Home: React.FC = () => {
             </p>
           </motion.div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr className="border-b-2 border-gray-700">
-                  <th className="px-4 py-5 text-left text-lg font-bold text-white">
-                    Plan
-                  </th>
-                  <th className="px-4 py-5 text-left text-lg font-bold text-white">
-                    Price
-                  </th>
-                  <th className="px-4 py-5 text-left text-lg font-bold text-white">
-                    Features
-                  </th>
-                  <th className="px-4 py-5 text-right"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {membershipPlans.map((plan, index) => (
-                  <motion.tr
-                    key={index}
-                    className="border-b border-gray-700"
-                    variants={tableRowVariants}
-                    initial="hidden"
-                    whileInView="visible"
-                    custom={index}
-                    viewport={{ once: true, margin: "-50px" }}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            {membershipPlans.map((plan, index) => (
+              <motion.div
+                key={index}
+                className={`rounded-lg overflow-hidden ${
+                  index === 1 ? "relative transform md:scale-105 md:-my-2" : ""
+                }`}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+                whileHover={{
+                  y: -10,
+                  transition: { duration: 0.2 },
+                }}
+                viewport={{ once: true }}
+              >
+                {/* Add BorderBeam to the middle (Premium) card */}
+                {index === 1 && (
+                  <BorderBeam
+                    size={80}
+                    duration={8}
+                    colorFrom="#ffaa40"
+                    colorTo="#9c40ff"
+                    initialOffset={0}
+                  />
+                )}
+
+                <div
+                  className={`h-full flex flex-col ${
+                    index === 1
+                      ? "bg-[#FFFDF2] text-black border-2 border-[#FFFDF2]"
+                      : "bg-gray-900 text-white border border-gray-700"
+                  }`}
+                >
+                  {/* Plan header */}
+                  <div
+                    className={`p-8 ${
+                      index === 1 ? "bg-[#FFFDF2]" : "bg-gray-800"
+                    }`}
                   >
-                    <td className="px-4 py-5 text-white font-semibold">
+                    <h3
+                      className={`text-2xl font-bold mb-2 ${
+                        index === 1 ? "text-black" : "text-white"
+                      }`}
+                    >
                       {plan.name}
-                    </td>
-                    <td className="px-4 py-5">
-                      <span className="text-white font-bold text-2xl">
-                        {plan.price}
-                      </span>
-                      <span className="text-gray-400 ml-1">/{plan.period}</span>
-                    </td>
-                    <td className="px-4 py-5">
-                      <ul className="list-disc pl-5 text-gray-300">
-                        {plan.features.map((feature, fIndex) => (
-                          <li key={fIndex}>{feature}</li>
-                        ))}
-                      </ul>
-                    </td>
-                    <td className="px-4 py-5 text-right">
-                      <motion.button
-                        className="px-6 py-2 bg-[#FFFDF2] text-black rounded-md"
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
+                    </h3>
+                    <div className="flex items-baseline">
+                      <span className="text-4xl font-bold">{plan.price}</span>
+                      <span
+                        className={`ml-2 ${
+                          index === 1 ? "text-gray-600" : "text-gray-400"
+                        }`}
                       >
-                        {t("Select")}
-                      </motion.button>
-                    </td>
-                  </motion.tr>
-                ))}
-              </tbody>
-            </table>
+                        /{plan.period}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Plan features */}
+                  <div className="flex-grow p-8">
+                    <ul className="space-y-4">
+                      {plan.features.map((feature, fIndex) => (
+                        <li key={fIndex} className="flex items-start">
+                          <svg
+                            className={`w-5 h-5 mr-2 mt-0.5 ${
+                              index === 1 ? "text-black" : "text-[#FFFDF2]"
+                            }`}
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M5 13l4 4L19 7"
+                            />
+                          </svg>
+                          <span
+                            className={
+                              index === 1 ? "text-gray-800" : "text-gray-300"
+                            }
+                          >
+                            {feature}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* CTA button */}
+                  <div className="p-8 pt-0">
+                    <motion.button
+                      className={`w-full py-3 px-6 rounded-md font-semibold transition-colors ${
+                        index === 1
+                          ? "bg-black text-[#FFFDF2] hover:bg-gray-800"
+                          : "bg-[#FFFDF2] text-black hover:bg-[#FFFDF2]/90"
+                      }`}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      {index === 1 ? t("Get Started") : t("Select Plan")}
+                    </motion.button>
+                  </div>
+
+                  {/* Popular badge for the Premium plan */}
+                  {index === 1 && (
+                    <div className="absolute top-0 right-0">
+                      <div className="bg-black text-[#FFFDF2] py-1 px-4 rounded-bl-lg font-medium">
+                        {t("Most Popular")}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>
