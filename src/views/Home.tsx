@@ -1,14 +1,15 @@
 import React, { useState, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import {
+  AnimatePresence,
   motion,
   useScroll,
   useTransform,
-  AnimatePresence,
 } from "framer-motion";
 import { Marquee } from "../components/magicui/marquee";
 import { Pointer } from "../components/magicui/pointer";
 import { LuDumbbell } from "react-icons/lu";
+import HeroCarousel from "../components/ui/HeroCarousel"; // Import the new component
 
 // ReviewCard component for the Marquee
 const ReviewCard: React.FC<{
@@ -49,6 +50,31 @@ const Home: React.FC = () => {
     [0, 0.2, 0.4, 0.6, 0.8],
     ["#FFFDF2", "#FFFDF2", "#FFFDF2", "#FFFDF2", "#FFFDF2"]
   );
+
+  // Sample data for hero carousel
+  const heroSlides = [
+    {
+      id: 1,
+      backgroundImage: "/photos/background.jpg", // Replace with your actual image paths
+      title: "Transform Your Fitness Journey",
+      description:
+        "Achieve your goals with our comprehensive management solution and professional guidance.",
+    },
+    {
+      id: 2,
+      backgroundImage: "/photos/background2.jpg",
+      title: "State-of-the-Art Facilities",
+      description:
+        "Experience training with premium equipment in a modern, motivating environment.",
+    },
+    {
+      id: 3,
+      backgroundImage: "/photos/background3.jpg",
+      title: "Expert Personal Trainers",
+      description:
+        "Our certified trainers create customized plans to help you reach your fitness goals faster.",
+    },
+  ];
 
   // Sample data for different sections
   const featuredCards = [
@@ -210,27 +236,6 @@ const Home: React.FC = () => {
   const secondRow = quickReviews.slice(quickReviews.length / 2);
 
   // Animation variants
-  const heroVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        duration: 1,
-        when: "beforeChildren",
-        staggerChildren: 0.3,
-      },
-    },
-  };
-
-  const heroTextVariants = {
-    hidden: { opacity: 0, y: 50 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.8, ease: "easeOut" },
-    },
-  };
-
   const cardVariants = {
     offscreen: {
       y: 50,
@@ -304,86 +309,8 @@ const Home: React.FC = () => {
 
   return (
     <motion.div ref={containerRef} style={{ backgroundColor }} className="">
-      {/* Hero Section with Background */}
-      <motion.section
-        className="min-h-screen flex items-center relative overflow-hidden"
-        initial="hidden"
-        animate="visible"
-        variants={heroVariants}
-      >
-        {/* Background Image with Parallax Effect */}
-        <div className="absolute inset-0 z-0">
-          <motion.div
-            style={{
-              backgroundImage: "url('/photos/background.jpg')",
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-              height: "100%",
-            }}
-            initial={{ scale: 1.2 }}
-            animate={{ scale: 1 }}
-            transition={{ duration: 2 }}
-          >
-            <div className="absolute inset-0 bg-black bg-opacity-50"></div>
-          </motion.div>
-        </div>
-
-        <div className="w-full px-8 relative z-10">
-          <div className="max-w-3xl">
-            <motion.h1
-              className="text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-6"
-              variants={heroTextVariants}
-            >
-              {t("Transform Your Fitness Journey")}
-            </motion.h1>
-            <motion.p
-              className="text-xl md:text-2xl text-white mb-8"
-              variants={heroTextVariants}
-            >
-              {t(
-                "Achieve your goals with our comprehensive management solution and professional guidance."
-              )}
-            </motion.p>
-            <motion.div variants={heroTextVariants}>
-              <motion.button
-                className="px-8 py-3 bg-[#FFFDF2] text-black font-semibold rounded-md text-lg shadow-lg mr-4"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                {t("Join Now")}
-              </motion.button>
-              <motion.button
-                className="px-8 py-3 border-2 border-[#FFFDF2] text-[#FFFDF2] font-semibold rounded-md text-lg"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                {t("Learn More")}
-              </motion.button>
-            </motion.div>
-          </div>
-        </div>
-
-        {/* Scroll indicator */}
-        <motion.div
-          className="absolute bottom-8 left-1/2 transform -translate-x-1/2"
-          animate={{ y: [0, 10, 0] }}
-          transition={{ duration: 1.5, repeat: Infinity }}
-        >
-          <svg
-            className="w-10 h-10 text-white"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M19 14l-7 7m0 0l-7-7m7 7V3"
-            ></path>
-          </svg>
-        </motion.div>
-      </motion.section>
+      {/* Replace static hero section with the new carousel component */}
+      <HeroCarousel slides={heroSlides} autoplaySpeed={6000} />
 
       {/* Feature Cards Section */}
       <section className="py-20 bg-[#FFFDF2]">
@@ -600,7 +527,7 @@ const Home: React.FC = () => {
 
           <div className="relative max-w-4xl mx-auto">
             <div className="overflow-hidden relative h-96">
-              <AnimatePresence initial={false} custom={direction}>
+              <AnimatePresence initial={false} custom={direction} mode="wait">
                 <motion.div
                   key={page}
                   custom={direction}
