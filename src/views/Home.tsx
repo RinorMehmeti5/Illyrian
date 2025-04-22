@@ -589,90 +589,111 @@ const Home: React.FC = () => {
           </motion.div>
 
           <div className="relative max-w-4xl mx-auto">
+            {/* Carousel container */}
             <div className="overflow-hidden relative h-96">
-              <AnimatePresence initial={false} custom={direction} mode="wait">
-                <motion.div
-                  key={page}
-                  custom={direction}
-                  variants={carouselVariants}
-                  initial="enter"
-                  animate="center"
-                  exit="exit"
-                  className="absolute w-full h-full"
+              {/* Use simple opacity transitions instead of AnimatePresence */}
+              {testimonials.map((testimonial, index) => (
+                <div
+                  key={index}
+                  className="absolute w-full h-full transition-all duration-500 ease-in-out"
+                  style={{
+                    opacity: currentSlide === index ? 1 : 0,
+                    transform: `translateX(${
+                      currentSlide === index
+                        ? 0
+                        : index > currentSlide
+                        ? 100
+                        : -100
+                    }%)`,
+                    visibility:
+                      Math.abs(currentSlide - index) <= 1
+                        ? "visible"
+                        : "hidden", // Only render adjacent slides
+                  }}
                 >
                   <div className="bg-[#FFFDF2] shadow-lg rounded-lg p-8 h-full flex flex-col md:flex-row items-center">
                     <div className="w-32 h-32 md:w-48 md:h-48 rounded-full overflow-hidden flex-shrink-0 mb-6 md:mb-0 md:mr-8">
                       <img
                         src={
-                          testimonials[page].image ||
-                          `https://via.placeholder.com/200x200?text=${testimonials[page].name}`
+                          testimonial.image ||
+                          `/api/placeholder/200/200?text=${testimonial.name}`
                         }
-                        alt={testimonials[page].name}
+                        alt={testimonial.name}
                         className="w-full h-full object-cover"
                       />
                     </div>
                     <div className="flex-1">
                       <blockquote className="text-lg italic text-gray-600 mb-4">
-                        "{testimonials[page].content}"
+                        "{testimonial.content}"
                       </blockquote>
-                      <p className="font-bold text-black">
-                        {testimonials[page].name}
-                      </p>
-                      <p className="text-gray-500">{testimonials[page].role}</p>
+                      <p className="font-bold text-black">{testimonial.name}</p>
+                      <p className="text-gray-500">{testimonial.role}</p>
                     </div>
                   </div>
-                </motion.div>
-              </AnimatePresence>
+                </div>
+              ))}
             </div>
 
-            {/* Navigation Arrows */}
-            <motion.button
-              className="absolute top-1/2 left-4 transform -translate-y-1/2 w-10 h-10 bg-black text-white rounded-full flex items-center justify-center focus:outline-none"
-              onClick={() => paginate(-1)}
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              disabled={currentSlide === 0}
-              style={{ opacity: currentSlide === 0 ? 0.5 : 1 }}
-            >
-              <svg
-                className="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+            {/* Fixed position Navigation Arrows with improved structure */}
+            <div className="absolute left-0 right-0 top-1/2 transform -translate-y-1/2 flex justify-between px-4 pointer-events-none z-10">
+              <motion.button
+                className="w-10 h-10 bg-black text-white rounded-full flex items-center justify-center focus:outline-none pointer-events-auto"
+                onClick={() => {
+                  if (currentSlide > 0) {
+                    setCurrentSlide(currentSlide - 1);
+                    setPage([currentSlide - 1, -1]);
+                  }
+                }}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                disabled={currentSlide === 0}
+                style={{ opacity: currentSlide === 0 ? 0.5 : 1 }}
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M15 19l-7-7 7-7"
-                ></path>
-              </svg>
-            </motion.button>
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M15 19l-7-7 7-7"
+                  ></path>
+                </svg>
+              </motion.button>
 
-            <motion.button
-              className="absolute top-1/2 right-4 transform -translate-y-1/2 w-10 h-10 bg-black text-white rounded-full flex items-center justify-center focus:outline-none"
-              onClick={() => paginate(1)}
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              disabled={currentSlide === testimonials.length - 1}
-              style={{
-                opacity: currentSlide === testimonials.length - 1 ? 0.5 : 1,
-              }}
-            >
-              <svg
-                className="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+              <motion.button
+                className="w-10 h-10 bg-black text-white rounded-full flex items-center justify-center focus:outline-none pointer-events-auto"
+                onClick={() => {
+                  if (currentSlide < testimonials.length - 1) {
+                    setCurrentSlide(currentSlide + 1);
+                    setPage([currentSlide + 1, 1]);
+                  }
+                }}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                disabled={currentSlide === testimonials.length - 1}
+                style={{
+                  opacity: currentSlide === testimonials.length - 1 ? 0.5 : 1,
+                }}
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M9 5l7 7-7 7"
-                ></path>
-              </svg>
-            </motion.button>
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M9 5l7 7-7 7"
+                  ></path>
+                </svg>
+              </motion.button>
+            </div>
 
             {/* Dots Indicator */}
             <div className="flex justify-center mt-8">

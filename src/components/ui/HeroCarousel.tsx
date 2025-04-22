@@ -1,7 +1,7 @@
 // components/ui/HeroCarousel.tsx
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { motion, AnimatePresence, Variants } from "framer-motion";
+import { motion, Variants } from "framer-motion";
 
 // Define the structure for a single slide
 interface SlideData {
@@ -18,11 +18,10 @@ interface HeroCarouselProps {
 
 const HeroCarousel: React.FC<HeroCarouselProps> = ({
   slides,
-  autoplaySpeed = 7000, // Default 5 seconds between slides
+  autoplaySpeed = 7000, // Default 7 seconds between slides
 }) => {
   const { t } = useTranslation();
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [direction, setDirection] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
 
   // Preload images to prevent white flash
@@ -44,30 +43,7 @@ const HeroCarousel: React.FC<HeroCarouselProps> = ({
     return () => clearInterval(intervalId); // Cleanup on unmount
   }, [currentSlide, autoplaySpeed, isAnimating]);
 
-  // Animation variants
-  const slideVariants: Variants = {
-    enter: (direction: number) => ({
-      x: direction > 0 ? "100%" : "-100%",
-      opacity: 0,
-    }),
-    center: {
-      x: 0,
-      opacity: 1,
-      transition: {
-        x: { type: "spring", stiffness: 300, damping: 30 },
-        opacity: { duration: 0.4 },
-      },
-    },
-    exit: (direction: number) => ({
-      x: direction < 0 ? "100%" : "-100%",
-      opacity: 0,
-      transition: {
-        x: { type: "spring", stiffness: 300, damping: 30 },
-        opacity: { duration: 0.2 },
-      },
-    }),
-  };
-
+  // Animation variants for text elements (we're keeping these)
   const heroTextVariants: Variants = {
     hidden: { opacity: 0, y: 50 },
     visible: {
@@ -87,7 +63,6 @@ const HeroCarousel: React.FC<HeroCarouselProps> = ({
     if (isAnimating) return; // Prevent rapid clicking
 
     setIsAnimating(true);
-    setDirection(newDirection);
 
     if (newDirection > 0) {
       // Move to next slide (or loop back to first)
@@ -104,10 +79,6 @@ const HeroCarousel: React.FC<HeroCarouselProps> = ({
   // Manual navigation to a specific slide
   const goToSlide = (index: number) => {
     if (isAnimating || index === currentSlide) return;
-
-    // Determine direction based on current position
-    const newDirection = index > currentSlide ? 1 : -1;
-    setDirection(newDirection);
     setCurrentSlide(index);
     setIsAnimating(true);
     setTimeout(() => setIsAnimating(false), 600);
@@ -115,59 +86,46 @@ const HeroCarousel: React.FC<HeroCarouselProps> = ({
 
   return (
     <section className="min-h-screen relative overflow-hidden bg-black">
-      {" "}
-      {/* Added bg-black to prevent white flash */}
-      {/* Background Image Carousel */}
-      <AnimatePresence initial={false} custom={direction} mode="sync">
-        {" "}
-        {/* Changed to sync mode */}
-        <motion.div
-          key={`slide-bg-${currentSlide}`}
-          className="absolute inset-0 z-0"
-          custom={direction}
-          variants={slideVariants}
-          initial="enter"
-          animate="center"
-          exit="exit"
-          onAnimationStart={() => setIsAnimating(true)}
-          onAnimationComplete={() => setIsAnimating(false)}
-        >
+      {/* Background Image without Framer Motion */}
+      <div className="absolute inset-0 z-0">
+        {slides.map((slide, index) => (
           <div
+            key={`slide-bg-${index}`}
             style={{
-              backgroundImage: `url('${slides[currentSlide].backgroundImage}')`,
+              backgroundImage: `url('${slide.backgroundImage}')`,
               backgroundSize: "cover",
               backgroundPosition: "center",
               height: "100%",
               width: "100%",
+              opacity: currentSlide === index ? 1 : 0,
+              transition: "opacity 0.8s ease-in-out",
+              position: "absolute",
+              top: 0,
+              left: 0,
             }}
-            className="transition-transform duration-500 ease-in-out"
           >
             <div className="absolute inset-0 bg-black bg-opacity-50"></div>
           </div>
-        </motion.div>
-      </AnimatePresence>
+        ))}
+      </div>
+
       {/* Content Layer (separate from background) */}
       <div className="absolute inset-0 flex items-center">
         <div className="w-full px-8 relative z-10">
-          {" "}
-          {/* Higher z-index */}
-          <AnimatePresence custom={direction} mode="sync">
-            {" "}
-            {/* Changed to sync mode */}
+          {slides.map((slide, index) => (
             <motion.div
-              key={`content-${currentSlide}`}
-              custom={direction}
+              key={`content-${index}`}
               initial="hidden"
-              animate="visible"
-              exit="exit"
+              animate={currentSlide === index ? "visible" : "exit"}
               variants={heroTextVariants}
               className="max-w-3xl"
+              style={{ display: currentSlide === index ? "block" : "none" }}
             >
               <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-6">
-                {t(slides[currentSlide].title)}
+                {t(slide.title)}
               </h1>
               <p className="text-xl md:text-2xl text-white mb-8">
-                {t(slides[currentSlide].description)}
+                {t(slide.description)}
               </p>
               <div className="flex flex-wrap gap-4">
                 <motion.button
@@ -186,52 +144,56 @@ const HeroCarousel: React.FC<HeroCarouselProps> = ({
                 </motion.button>
               </div>
             </motion.div>
-          </AnimatePresence>
+          ))}
         </div>
       </div>
-      {/* Navigation Arrows */}
-      <motion.button
-        className="absolute top-1/2 left-4 transform -translate-y-1/2 w-12 h-12 bg-black/30 hover:bg-black/60 text-white rounded-full flex items-center justify-center focus:outline-none z-20"
-        onClick={() => paginate(-1)}
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.9 }}
-        disabled={isAnimating}
-      >
-        <svg
-          className="w-6 h-6"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
+
+      {/* Fixed position Navigation Arrows with improved styles */}
+      <div className="absolute left-0 right-0 top-1/2 transform -translate-y-1/2 z-20 flex justify-between px-4 pointer-events-none">
+        <motion.button
+          className="w-12 h-12 bg-black/30 hover:bg-black/60 text-white rounded-full flex items-center justify-center focus:outline-none pointer-events-auto"
+          onClick={() => paginate(-1)}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+          disabled={isAnimating}
         >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-            d="M15 19l-7-7 7-7"
-          ></path>
-        </svg>
-      </motion.button>
-      <motion.button
-        className="absolute top-1/2 right-4 transform -translate-y-1/2 w-12 h-12 bg-black/30 hover:bg-black/60 text-white rounded-full flex items-center justify-center focus:outline-none z-20"
-        onClick={() => paginate(1)}
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.9 }}
-        disabled={isAnimating}
-      >
-        <svg
-          className="w-6 h-6"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
+          <svg
+            className="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M15 19l-7-7 7-7"
+            ></path>
+          </svg>
+        </motion.button>
+        <motion.button
+          className="w-12 h-12 bg-black/30 hover:bg-black/60 text-white rounded-full flex items-center justify-center focus:outline-none pointer-events-auto"
+          onClick={() => paginate(1)}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+          disabled={isAnimating}
         >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-            d="M9 5l7 7-7 7"
-          ></path>
-        </svg>
-      </motion.button>
+          <svg
+            className="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M9 5l7 7-7 7"
+            ></path>
+          </svg>
+        </motion.button>
+      </div>
+
       {/* Dots Indicator */}
       <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 flex space-x-2 z-20">
         {slides.map((_, index) => (
@@ -252,6 +214,7 @@ const HeroCarousel: React.FC<HeroCarouselProps> = ({
           />
         ))}
       </div>
+
       {/* Scroll indicator */}
       <motion.div
         className="absolute bottom-20 left-1/2 transform -translate-x-1/2 z-20"
