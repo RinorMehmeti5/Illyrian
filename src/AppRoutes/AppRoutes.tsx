@@ -10,7 +10,6 @@ import MaterialAdminLayout from "../components/layouts/MaterialAdminLayout";
 // Public views
 import Home from "../views/Home";
 import Team from "../views/Team";
-import Projects from "../views/Projects";
 import Login from "../views/shared/Login";
 import Register from "../views/shared/Register";
 import Unauthorized from "../views/shared/Unauthorized";
@@ -34,7 +33,6 @@ const AppRoutes: React.FC = () => {
       <Route element={<PublicLayout />}>
         <Route path="/" element={<Home />} />
         <Route path="/team" element={<Team />} />
-        <Route path="/projects" element={<Projects />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/unauthorized" element={<Unauthorized />} />
