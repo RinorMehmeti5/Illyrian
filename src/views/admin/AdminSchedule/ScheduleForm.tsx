@@ -36,7 +36,14 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
       initialValues={initialValues}
       validationSchema={validationSchema}
       onSubmit={async (values, { setSubmitting, resetForm }) => {
-        await onSubmit(values);
+        // Ensure time values are properly formatted as HH:MM
+        const formattedValues = {
+          ...values,
+          startTime: values.startTime, // Already in HH:MM format from the time input
+          endTime: values.endTime, // Already in HH:MM format from the time input
+        };
+
+        await onSubmit(formattedValues);
         setSubmitting(false);
       }}
       enableReinitialize={true}

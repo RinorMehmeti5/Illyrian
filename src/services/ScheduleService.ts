@@ -12,15 +12,15 @@ export interface ScheduleDTO {
 }
 
 export interface CreateScheduleRequest {
-  startTime: string;
-  endTime: string;
+  startTime: string; // Format: "HH:MM" (24-hour format)
+  endTime: string; // Format: "HH:MM" (24-hour format)
   dayOfWeek: string;
 }
 
 export interface UpdateScheduleRequest {
   scheduleId: number;
-  startTime: string;
-  endTime: string;
+  startTime: string; // Format: "HH:MM" (24-hour format)
+  endTime: string; // Format: "HH:MM" (24-hour format)
   dayOfWeek: string;
 }
 

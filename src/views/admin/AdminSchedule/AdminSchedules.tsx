@@ -1,5 +1,12 @@
 // admin/AdminSchedule/AdminSchedules.tsx
-import React, { useEffect, useMemo, useState, Fragment } from "react";
+import React, {
+  useEffect,
+  useMemo,
+  useState,
+  Fragment,
+  useCallback,
+  useRef,
+} from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import useScheduleStore from "../../../store/scheduleStore";
@@ -17,6 +24,7 @@ import {
   flexRender,
   ColumnDef,
   SortingState,
+  Row,
 } from "@tanstack/react-table";
 import ScheduleForm from "./ScheduleForm";
 import ScheduleModal from "./ScheduleModal";
@@ -27,6 +35,113 @@ import {
   PencilIcon,
   TrashIcon,
 } from "@heroicons/react/24/outline";
+
+interface ActionsCellProps {
+  row: Row<ScheduleDTO>;
+  onEdit: (schedule: ScheduleDTO) => void;
+  onDelete: (id: number) => void;
+  t: (key: string, options?: any) => string; // Translation function type
+}
+
+// Update this component in your code
+const ActionsCell: React.FC<ActionsCellProps> = ({
+  row,
+  onEdit,
+  onDelete,
+  t,
+}) => {
+  const [buttonPosition, setButtonPosition] = useState({ top: 0, left: 0 });
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  const handleEdit = useCallback(() => {
+    onEdit(row.original);
+  }, [row.original, onEdit]);
+
+  const handleDelete = useCallback(() => {
+    onDelete(row.original.scheduleId);
+  }, [row.original.scheduleId, onDelete]);
+
+  const updatePosition = useCallback(() => {
+    if (buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setButtonPosition({
+        top: rect.bottom + window.scrollY,
+        left: rect.right - 150 + window.scrollX, // Position dropdown to the left of button
+      });
+    }
+  }, []);
+
+  return (
+    <Menu as="div" className="relative inline-block text-left">
+      {({ open }) => (
+        <>
+          <div>
+            <Menu.Button
+              ref={buttonRef}
+              onClick={updatePosition}
+              className="inline-flex justify-center w-full px-4 py-2 text-sm font-medium text-white bg-blue-700 border border-transparent hover:border-white rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+            >
+              {t("Actions")}
+            </Menu.Button>
+          </div>
+          <Transition
+            as={Fragment}
+            enter="transition ease-out duration-100"
+            enterFrom="transform opacity-0 scale-95"
+            enterTo="transform opacity-100 scale-100"
+            leave="transition ease-in duration-75"
+            leaveFrom="transform opacity-100 scale-100"
+            leaveTo="transform opacity-0 scale-95"
+            afterEnter={updatePosition}
+          >
+            <Menu.Items
+              className="fixed z-50 w-56 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+              style={{
+                top: `${buttonPosition.top}px`,
+                left: `${buttonPosition.left}px`,
+              }}
+            >
+              <div className="py-1">
+                <Menu.Item>
+                  {({ active }) => (
+                    <button
+                      onClick={handleEdit}
+                      className={`${
+                        active ? "bg-gray-100 text-gray-900" : "text-gray-700"
+                      } group flex items-center w-full px-4 py-2 text-sm`}
+                    >
+                      <PencilIcon
+                        className="w-5 h-5 mr-3 text-primary-500"
+                        aria-hidden="true"
+                      />
+                      {t("Edit")}
+                    </button>
+                  )}
+                </Menu.Item>
+                <Menu.Item>
+                  {({ active }) => (
+                    <button
+                      onClick={handleDelete}
+                      className={`${
+                        active ? "bg-gray-100 text-gray-900" : "text-gray-700"
+                      } group flex items-center w-full px-4 py-2 text-sm`}
+                    >
+                      <TrashIcon
+                        className="w-5 h-5 mr-3 text-red-500"
+                        aria-hidden="true"
+                      />
+                      {t("Delete")}
+                    </button>
+                  )}
+                </Menu.Item>
+              </div>
+            </Menu.Items>
+          </Transition>
+        </>
+      )}
+    </Menu>
+  );
+};
 
 const AdminSchedules: React.FC = () => {
   const { t } = useTranslation();
@@ -104,16 +219,45 @@ const AdminSchedules: React.FC = () => {
   };
 
   // Handle edit schedule button click
+  // Replace the handleEditSchedule function in AdminSchedules.tsx with this version:
+
   const handleEditSchedule = (schedule: ScheduleDTO) => {
     setSelectedSchedule(schedule);
 
-    // Format the DateTime to HH:MM for the time input
-    const startTimeStr = new Date(schedule.startTime)
-      .toTimeString()
-      .substring(0, 5);
-    const endTimeStr = new Date(schedule.endTime)
-      .toTimeString()
-      .substring(0, 5);
+    // Safely parse date strings with error handling
+    let startTimeStr = "09:00";
+    let endTimeStr = "17:00";
+
+    try {
+      // First check if the date values might be strings that need to be parsed
+      const startDate =
+        typeof schedule.startTime === "string"
+          ? new Date(schedule.startTime)
+          : new Date(schedule.startTime);
+
+      const endDate =
+        typeof schedule.endTime === "string"
+          ? new Date(schedule.endTime)
+          : new Date(schedule.endTime);
+
+      // Check if dates are valid before using them
+      if (!isNaN(startDate.getTime())) {
+        startTimeStr =
+          startDate.getHours().toString().padStart(2, "0") +
+          ":" +
+          startDate.getMinutes().toString().padStart(2, "0");
+      }
+
+      if (!isNaN(endDate.getTime())) {
+        endTimeStr =
+          endDate.getHours().toString().padStart(2, "0") +
+          ":" +
+          endDate.getMinutes().toString().padStart(2, "0");
+      }
+    } catch (error) {
+      console.error("Error parsing schedule dates:", error);
+      // Use default times if parsing fails
+    }
 
     setInitialFormValues({
       scheduleId: schedule.scheduleId,
@@ -121,6 +265,7 @@ const AdminSchedules: React.FC = () => {
       endTime: endTimeStr,
       dayOfWeek: schedule.dayOfWeek,
     });
+
     setIsEditing(true);
     setIsModalOpen(true);
   };
@@ -174,70 +319,17 @@ const AdminSchedules: React.FC = () => {
         id: "actions",
         header: t("Actions"),
         cell: ({ row }) => (
-          <Menu as="div" className="relative inline-block text-left">
-            <div>
-              <Menu.Button className="inline-flex justify-center w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
-                {t("Actions")}
-                <ChevronDownIcon
-                  className="w-5 h-5 ml-2 -mr-1 text-gray-500"
-                  aria-hidden="true"
-                />
-              </Menu.Button>
-            </div>
-            <Transition
-              as={Fragment}
-              enter="transition ease-out duration-100"
-              enterFrom="transform opacity-0 scale-95"
-              enterTo="transform opacity-100 scale-100"
-              leave="transition ease-in duration-75"
-              leaveFrom="transform opacity-100 scale-100"
-              leaveTo="transform opacity-0 scale-95"
-            >
-              <Menu.Items className="absolute right-0 z-10 w-56 mt-2 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
-                <div className="py-1">
-                  <Menu.Item>
-                    {({ active }) => (
-                      <button
-                        onClick={() => handleEditSchedule(row.original)}
-                        className={`${
-                          active ? "bg-gray-100 text-gray-900" : "text-gray-700"
-                        } group flex items-center w-full px-4 py-2 text-sm`}
-                      >
-                        <PencilIcon
-                          className="w-5 h-5 mr-3 text-primary-500"
-                          aria-hidden="true"
-                        />
-                        {t("Edit")}
-                      </button>
-                    )}
-                  </Menu.Item>
-                  <Menu.Item>
-                    {({ active }) => (
-                      <button
-                        onClick={() =>
-                          handleDeleteSchedule(row.original.scheduleId)
-                        }
-                        className={`${
-                          active ? "bg-gray-100 text-gray-900" : "text-gray-700"
-                        } group flex items-center w-full px-4 py-2 text-sm`}
-                      >
-                        <TrashIcon
-                          className="w-5 h-5 mr-3 text-red-500"
-                          aria-hidden="true"
-                        />
-                        {t("Delete")}
-                      </button>
-                    )}
-                  </Menu.Item>
-                </div>
-              </Menu.Items>
-            </Transition>
-          </Menu>
+          <ActionsCell
+            row={row}
+            onEdit={handleEditSchedule}
+            onDelete={handleDeleteSchedule}
+            t={t}
+          />
         ),
         enableSorting: false,
       },
     ],
-    [t]
+    [t, handleEditSchedule, handleDeleteSchedule]
   );
 
   // TanStack Table instance

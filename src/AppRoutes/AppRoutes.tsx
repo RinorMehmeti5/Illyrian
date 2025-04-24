@@ -23,6 +23,7 @@ import Test from "../views/Test";
 import ProtectedRoute from "../components/ui/ProtectedRoute";
 import AdminRoute from "../components/ui/AdminRoute";
 import AdminMemberships from "../views/admin/AdminMembership/AdminMemberships";
+import AdminSchedules from "../views/admin/AdminSchedule";
 
 const AppRoutes: React.FC = () => {
   const { isAuthenticated, userRoles } = useAuthStore();
@@ -57,6 +58,8 @@ const AppRoutes: React.FC = () => {
           <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="users" element={<AdminUsers />} />
           <Route path="memeberships" element={<AdminMemberships />} />
+          <Route path="schedule" element={<AdminSchedules />} />
+
           {/* Add more admin routes as needed */}
           <Route index element={<Navigate to="dashboard" replace />} />
         </Route>
