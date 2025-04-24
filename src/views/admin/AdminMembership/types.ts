@@ -1,4 +1,4 @@
-// admin/AdminMembership/types.tsx
+// admin/AdminMembership/types.ts
 
 import {
   MembershipDTO,

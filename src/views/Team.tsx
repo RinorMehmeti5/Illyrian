@@ -1,12 +1,27 @@
 import React, { useState, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Confetti, type ConfettiRef } from "../components/magicui/confetti";
-import { motion, useScroll, useTransform } from "framer-motion";
+import {
+  AnimatePresence,
+  motion,
+  useScroll,
+  useTransform,
+} from "framer-motion";
 import { BorderBeam } from "../components/magicui/border-beam";
-import { FaInstagram, FaLinkedin, FaTwitter } from "react-icons/fa";
 import { AnimatedGridPattern } from "../components/magicui/animated-grid-pattern";
 import { cn } from "../lib/utils";
 import { FlickeringGrid } from "../components/magicui/flickering-grid";
+import {
+  FaInstagram,
+  FaLinkedin,
+  FaTwitter,
+  FaUserTie,
+  FaCertificate,
+  FaUsers,
+  FaCalendarAlt,
+  FaArrowDown,
+} from "react-icons/fa";
+import ScrollToTop from "../components/ui/ScrollToTop";
 
 const Team: React.FC = () => {
   const { t } = useTranslation();
@@ -356,26 +371,16 @@ const Team: React.FC = () => {
             </motion.button>
           </motion.div>
 
-          {/* Scroll indicator - moved outside the container and positioned relative to the section */}
-          <motion.div
-            className="absolute bottom-10 left-1/2 transform -translate-x-1/2 z-10"
-            animate={{ y: [0, 10, 0] }}
-            transition={{ duration: 1.5, repeat: Infinity }}
-          >
-            <svg
-              className="w-10 h-10 text-white"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+          {/* Scroll indicator with perfect centering */}
+          <div className="absolute bottom-10 inset-x-0 flex justify-center items-center z-10">
+            <motion.div
+              animate={{ y: [0, 10, 0] }}
+              transition={{ duration: 1.5, repeat: Infinity }}
+              className="text-center"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M19 14l-7 7m0 0l-7-7m7 7V3"
-              ></path>
-            </svg>
-          </motion.div>
+              <FaArrowDown size={40} className="text-white" />
+            </motion.div>
+          </div>
           <Confetti
             ref={confettiRef}
             className="absolute left-0 top-0 z-0 h-full w-full"
@@ -386,16 +391,16 @@ const Team: React.FC = () => {
         <section className="py-20 bg-[#FFFDF2] relative overflow-hidden">
           <FlickeringGrid
             className="absolute inset-0 z-0 size-full w-full h-full"
-            squareSize={6}
+            squareSize={12}
             gridGap={10}
             color="#6B7280"
-            maxOpacity={0.3}
+            maxOpacity={0.1}
             flickerChance={0.1}
           />
           <div className="container mx-auto px-8">
             <div className="flex flex-col lg:flex-row items-center gap-12">
               <motion.div
-                className="lg:w-1/2 border border-gray-200 rounded-xl backdrop-blur-xs backdrop-brightness-100 backdrop-opacity-80 bg-white/30 p-8 shadow-lg"
+                className="lg:w-1/2 border border-gray-200 rounded-xl backdrop-blur-xs backdrop-brightness-125 backdrop-opacity-80 bg-white/30 p-8 shadow-lg"
                 initial={{ opacity: 0, x: -50 }}
                 whileInView={{ opacity: 1, x: 0.6 }}
                 transition={{ duration: 0.6 }}
@@ -541,11 +546,6 @@ const Team: React.FC = () => {
                   className="bg-white rounded-lg overflow-hidden shadow-lg border border-gray-200"
                   variants={teamCardVariants}
                   whileHover="hover"
-                  onClick={() =>
-                    setActiveTrainer(
-                      activeTrainer === member.id ? null : member.id
-                    )
-                  }
                 >
                   <div className="relative overflow-hidden">
                     <img
@@ -575,59 +575,65 @@ const Team: React.FC = () => {
 
                     <p className="text-gray-600 mb-4">{member.bio}</p>
 
-                    <motion.div
-                      className="overflow-hidden"
-                      animate={{
-                        height: activeTrainer === member.id ? "auto" : 0,
-                      }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      <div className="pt-4 border-t border-gray-200">
-                        <h4 className="font-bold text-black mb-2">
-                          Certifications:
-                        </h4>
-                        <ul className="list-disc list-inside text-gray-600 mb-4">
-                          {member.certifications.map((cert, idx) => (
-                            <li key={idx}>{cert}</li>
-                          ))}
-                        </ul>
-
-                        <div className="flex space-x-4">
-                          <a
-                            href={`https://instagram.com/${member.instagram}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-gray-700 hover:text-pink-600"
+                    {/* Certifications as badges */}
+                    <div className="mb-4">
+                      <h4 className="font-bold text-black mb-2">
+                        Certifications:
+                      </h4>
+                      <div className="flex flex-wrap gap-2">
+                        {member.certifications.map((cert, idx) => (
+                          <span
+                            key={idx}
+                            className="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm border border-gray-300"
                           >
-                            <FaInstagram size={24} />
-                          </a>
-                          <a
-                            href={`https://twitter.com/${member.twitter}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-gray-700 hover:text-blue-400"
-                          >
-                            <FaTwitter size={24} />
-                          </a>
-                          <a
-                            href={`https://linkedin.com/in/${member.linkedin}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-gray-700 hover:text-blue-700"
-                          >
-                            <FaLinkedin size={24} />
-                          </a>
-                        </div>
+                            {cert}
+                          </span>
+                        ))}
                       </div>
-                    </motion.div>
+                    </div>
 
-                    <motion.button
-                      className="mt-4 w-full py-2 bg-black text-[#FFFDF2] rounded-md font-medium"
-                      whileHover={{ scale: 1.03 }}
-                      whileTap={{ scale: 0.97 }}
-                    >
-                      {activeTrainer === member.id ? "Show Less" : "Read More"}
-                    </motion.button>
+                    {/* Social media links as buttons with effects */}
+                    <div className="flex gap-3 mt-4 pt-4 border-t border-gray-200">
+                      <motion.a
+                        href={`https://instagram.com/${member.instagram}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-full"
+                        whileHover={{ scale: 1.1, backgroundColor: "#E1306C" }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <FaInstagram
+                          size={20}
+                          className="text-gray-700 group-hover:text-white"
+                        />
+                      </motion.a>
+                      <motion.a
+                        href={`https://twitter.com/${member.twitter}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-full"
+                        whileHover={{ scale: 1.1, backgroundColor: "#1DA1F2" }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <FaTwitter
+                          size={20}
+                          className="text-gray-700 group-hover:text-white"
+                        />
+                      </motion.a>
+                      <motion.a
+                        href={`https://linkedin.com/in/${member.linkedin}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-full"
+                        whileHover={{ scale: 1.1, backgroundColor: "#0077B5" }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <FaLinkedin
+                          size={20}
+                          className="text-gray-700 group-hover:text-white"
+                        />
+                      </motion.a>
+                    </div>
                   </div>
                 </motion.div>
               ))}
@@ -637,7 +643,7 @@ const Team: React.FC = () => {
 
         {/* Weekly Schedule Section */}
         <section className="py-20 bg-black text-white">
-          <div className="container mx-auto px-8">
+          <div className="container mx-auto px-4 sm:px-8">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -653,6 +659,7 @@ const Team: React.FC = () => {
               </p>
             </motion.div>
 
+            {/* Day selection buttons */}
             <div className="flex flex-wrap mb-8 justify-center">
               {weeklySchedule.map((day) => (
                 <motion.button
@@ -671,91 +678,123 @@ const Team: React.FC = () => {
               ))}
             </div>
 
-            <div className="overflow-hidden bg-gray-900 rounded-lg shadow-xl">
-              {weeklySchedule.map((day) => (
-                <motion.div
-                  key={day.day}
-                  className="p-6"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{
-                    opacity: visibleDay === day.day ? 1 : 0,
-                    x: visibleDay === day.day ? 0 : 20,
-                    display: visibleDay === day.day ? "block" : "none",
-                  }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <h3 className="text-2xl font-bold mb-6 text-[#FFFDF2]">
-                    {day.day}
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {day.classes.map((classItem, idx) => (
+            {/* Schedule content container */}
+            <div className="bg-gray-900 rounded-lg shadow-xl overflow-hidden">
+              <div className="relative">
+                {weeklySchedule.map((day) => (
+                  <AnimatePresence key={day.day} mode="wait">
+                    {visibleDay === day.day && (
                       <motion.div
-                        key={idx}
-                        className="bg-gray-800 p-4 rounded-lg"
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.3, delay: idx * 0.1 }}
+                        className="p-4 sm:p-6"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0, position: "absolute" }}
+                        transition={{ duration: 0.2 }}
                       >
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h4 className="font-bold text-[#FFFDF2]">
-                              {classItem.name}
-                            </h4>
-                            <p className="text-gray-400">
-                              Instructor: {classItem.trainer}
-                            </p>
-                          </div>
-                          <span className="bg-black px-3 py-1 rounded-md text-sm text-[#FFFDF2]">
-                            {classItem.time}
-                          </span>
+                        <h3 className="text-2xl font-bold mb-6 text-[#FFFDF2]">
+                          {day.day}
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {day.classes.map((classItem, idx) => (
+                            <motion.div
+                              key={idx}
+                              className="bg-gray-800 p-4 rounded-lg"
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ duration: 0.2, delay: idx * 0.05 }}
+                            >
+                              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
+                                <div>
+                                  <h4 className="font-bold text-[#FFFDF2]">
+                                    {classItem.name}
+                                  </h4>
+                                  <p className="text-gray-400">
+                                    Instructor: {classItem.trainer}
+                                  </p>
+                                </div>
+                                <span className="bg-black px-3 py-1 rounded-md text-sm text-[#FFFDF2] w-fit">
+                                  {classItem.time}
+                                </span>
+                              </div>
+                            </motion.div>
+                          ))}
                         </div>
                       </motion.div>
-                    ))}
+                    )}
+                  </AnimatePresence>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Team Stats Section */}
+        <section className="bg-[#FFFDF2]">
+          <div className="w-full">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-0">
+              {[
+                {
+                  number: "20+",
+                  label: "Expert Trainers",
+                  color: "#f44336",
+                  icon: FaUserTie,
+                },
+                {
+                  number: "50+",
+                  label: "Certifications",
+                  color: "#2196f3",
+                  icon: FaCertificate,
+                },
+                {
+                  number: "1000+",
+                  label: "Happy Members",
+                  color: "#4caf50",
+                  icon: FaUsers,
+                },
+                {
+                  number: "30+",
+                  label: "Weekly Classes",
+                  color: "#ff9800",
+                  icon: FaCalendarAlt,
+                },
+              ].map((stat, index) => (
+                <motion.div
+                  key={index}
+                  className="relative overflow-hidden h-full"
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                  viewport={{ once: true }}
+                  style={{ backgroundColor: stat.color }}
+                >
+                  {/* Static Background Icon */}
+                  <div className="absolute right-5 bottom-2 text-white opacity-100">
+                    <stat.icon size={70} />
+                  </div>
+
+                  <div className="relative z-10 p-10 text-center">
+                    <motion.p
+                      className="text-5xl md:text-6xl font-bold text-white mb-2"
+                      initial={{ scale: 0.5 }}
+                      whileInView={{ scale: 1 }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 200,
+                        delay: index * 0.1,
+                      }}
+                      viewport={{ once: true }}
+                    >
+                      {stat.number}
+                    </motion.p>
+                    <p className="text-xl text-white font-medium">
+                      {t(stat.label)}
+                    </p>
                   </div>
                 </motion.div>
               ))}
             </div>
           </div>
         </section>
-
-        {/* Team Stats Section */}
-        <section className="py-20 bg-[#FFFDF2]">
-          <div className="container mx-auto px-8">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-              {[
-                { number: "20+", label: "Expert Trainers" },
-                { number: "50+", label: "Certifications" },
-                { number: "1000+", label: "Happy Members" },
-                { number: "30+", label: "Weekly Classes" },
-              ].map((stat, index) => (
-                <motion.div
-                  key={index}
-                  className="text-center"
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                  viewport={{ once: true }}
-                >
-                  <motion.p
-                    className="text-5xl md:text-6xl font-bold text-black mb-2"
-                    initial={{ scale: 0.5 }}
-                    whileInView={{ scale: 1 }}
-                    transition={{
-                      type: "spring",
-                      stiffness: 200,
-                      delay: index * 0.1,
-                    }}
-                    viewport={{ once: true }}
-                  >
-                    {stat.number}
-                  </motion.p>
-                  <p className="text-xl text-gray-600">{t(stat.label)}</p>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </section>
-
         {/* Call to Action */}
         <section className="py-20 bg-black">
           <div className="container mx-auto px-8 text-center">
@@ -794,6 +833,7 @@ const Team: React.FC = () => {
             </motion.div>
           </div>
         </section>
+        <ScrollToTop color="#000000" backgroundColor="#FFFDF2" />
       </motion.div>
     </>
   );

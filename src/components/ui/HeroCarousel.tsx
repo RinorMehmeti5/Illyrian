@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { motion, Variants } from "framer-motion";
+import { FaArrowDown } from "react-icons/fa";
 
 // Define the structure for a single slide
 interface SlideData {
@@ -195,7 +196,7 @@ const HeroCarousel: React.FC<HeroCarouselProps> = ({
       </div>
 
       {/* Dots Indicator */}
-      <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 flex space-x-2 z-20">
+      <div className="absolute bottom-10 inset-x-0 flex justify-center space-x-2 z-20">
         {slides.map((_, index) => (
           <motion.button
             key={index}
@@ -215,26 +216,16 @@ const HeroCarousel: React.FC<HeroCarouselProps> = ({
         ))}
       </div>
 
-      {/* Scroll indicator */}
-      <motion.div
-        className="absolute bottom-20 left-1/2 transform -translate-x-1/2 z-20"
-        animate={{ y: [0, 10, 0] }}
-        transition={{ duration: 1.5, repeat: Infinity }}
-      >
-        <svg
-          className="w-10 h-10 text-white"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
+      {/* Scroll indicator - perfectly centered */}
+      <div className="absolute bottom-20 inset-x-0 flex justify-center items-center z-20">
+        <motion.div
+          animate={{ y: [0, 10, 0] }}
+          transition={{ duration: 1.5, repeat: Infinity }}
+          className="text-center"
         >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-            d="M19 14l-7 7m0 0l-7-7m7 7V3"
-          ></path>
-        </svg>
-      </motion.div>
+          <FaArrowDown size={40} className="text-white" />
+        </motion.div>
+      </div>
     </section>
   );
 };

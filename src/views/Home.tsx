@@ -11,6 +11,8 @@ import { Marquee } from "../components/magicui/marquee";
 import { Pointer } from "../components/magicui/pointer";
 import { LuDumbbell } from "react-icons/lu";
 import HeroCarousel from "../components/ui/HeroCarousel"; // Import the new component
+import ScrollToTop from "../components/ui/ScrollToTop";
+
 import { BorderBeam } from "../components/magicui/border-beam";
 
 // ReviewCard component for the Marquee
@@ -779,6 +781,7 @@ const Home: React.FC = () => {
           </motion.div>
         </div>
       </section>
+      <ScrollToTop color="#000000" backgroundColor="#FFFDF2" />
     </motion.div>
   );
 };

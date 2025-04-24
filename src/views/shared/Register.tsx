@@ -92,14 +92,15 @@ const Register: React.FC = () => {
 
   return (
     <>
-      <div className="min-h-screen flex flex-col md:flex-row relative overflow-hidden">
+      {/* Changed min-h-screen to min-h-full and added py-8 for padding */}
+      <div className="min-h-full flex flex-col md:flex-row relative overflow-hidden py-8">
         {/* Left side image with CoolMode */}
         <CoolMode>
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8, delay: 0.3 }}
-            className="hidden md:block flex-1 bg-black relative overflow-hidden m-10 rounded-2xl cursor-pointer"
+            className="hidden md:block flex-1 bg-black relative overflow-hidden m-10 rounded-2xl cursor-pointer max-h-[800px]"
           >
             <div className="absolute inset-0 bg-gradient-to-tr from-black via-black/70 to-transparent z-10"></div>
             <div
@@ -144,12 +145,12 @@ const Register: React.FC = () => {
           </motion.div>
         </CoolMode>
 
-        {/* Right side form */}
+        {/* Right side form - removed md:h-screen and added overflow-y-auto */}
         <motion.div
           initial="hidden"
           animate="visible"
           variants={containerVariants}
-          className="flex-1 flex items-center justify-center p-8 bg-white md:h-screen relative"
+          className="flex-1 flex items-center justify-center p-8 bg-white relative overflow-y-auto"
         >
           <div className="w-full max-w-lg relative z-10">
             <motion.div variants={itemVariants} className="text-center mb-6">
