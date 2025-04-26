@@ -3,10 +3,11 @@ import React, {
   useEffect,
   useMemo,
   useState,
-  Fragment,
   useCallback,
   useRef,
 } from "react";
+import { createPortal } from "react-dom";
+
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import useScheduleStore from "../../../store/scheduleStore";
@@ -24,124 +25,15 @@ import {
   flexRender,
   ColumnDef,
   SortingState,
-  Row,
 } from "@tanstack/react-table";
 import ScheduleForm from "./ScheduleForm";
 import ScheduleModal from "./ScheduleModal";
 import { ScheduleFormValues } from "./types";
-import { Menu, Transition } from "@headlessui/react";
 import {
   ChevronDownIcon,
   PencilIcon,
   TrashIcon,
 } from "@heroicons/react/24/outline";
-
-interface ActionsCellProps {
-  row: Row<ScheduleDTO>;
-  onEdit: (schedule: ScheduleDTO) => void;
-  onDelete: (id: number) => void;
-  t: (key: string, options?: any) => string; // Translation function type
-}
-
-// Update this component in your code
-const ActionsCell: React.FC<ActionsCellProps> = ({
-  row,
-  onEdit,
-  onDelete,
-  t,
-}) => {
-  const [buttonPosition, setButtonPosition] = useState({ top: 0, left: 0 });
-  const buttonRef = useRef<HTMLButtonElement>(null);
-
-  const handleEdit = useCallback(() => {
-    onEdit(row.original);
-  }, [row.original, onEdit]);
-
-  const handleDelete = useCallback(() => {
-    onDelete(row.original.scheduleId);
-  }, [row.original.scheduleId, onDelete]);
-
-  const updatePosition = useCallback(() => {
-    if (buttonRef.current) {
-      const rect = buttonRef.current.getBoundingClientRect();
-      setButtonPosition({
-        top: rect.bottom + window.scrollY,
-        left: rect.right - 150 + window.scrollX, // Position dropdown to the left of button
-      });
-    }
-  }, []);
-
-  return (
-    <Menu as="div" className="relative inline-block text-left">
-      {({ open }) => (
-        <>
-          <div>
-            <Menu.Button
-              ref={buttonRef}
-              onClick={updatePosition}
-              className="inline-flex justify-center w-full px-4 py-2 text-sm font-medium text-white bg-blue-700 border border-transparent hover:border-white rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-            >
-              {t("Actions")}
-            </Menu.Button>
-          </div>
-          <Transition
-            as={Fragment}
-            enter="transition ease-out duration-100"
-            enterFrom="transform opacity-0 scale-95"
-            enterTo="transform opacity-100 scale-100"
-            leave="transition ease-in duration-75"
-            leaveFrom="transform opacity-100 scale-100"
-            leaveTo="transform opacity-0 scale-95"
-            afterEnter={updatePosition}
-          >
-            <Menu.Items
-              className="fixed z-50 w-56 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
-              style={{
-                top: `${buttonPosition.top}px`,
-                left: `${buttonPosition.left}px`,
-              }}
-            >
-              <div className="py-1">
-                <Menu.Item>
-                  {({ active }) => (
-                    <button
-                      onClick={handleEdit}
-                      className={`${
-                        active ? "bg-gray-100 text-gray-900" : "text-gray-700"
-                      } group flex items-center w-full px-4 py-2 text-sm`}
-                    >
-                      <PencilIcon
-                        className="w-5 h-5 mr-3 text-primary-500"
-                        aria-hidden="true"
-                      />
-                      {t("Edit")}
-                    </button>
-                  )}
-                </Menu.Item>
-                <Menu.Item>
-                  {({ active }) => (
-                    <button
-                      onClick={handleDelete}
-                      className={`${
-                        active ? "bg-gray-100 text-gray-900" : "text-gray-700"
-                      } group flex items-center w-full px-4 py-2 text-sm`}
-                    >
-                      <TrashIcon
-                        className="w-5 h-5 mr-3 text-red-500"
-                        aria-hidden="true"
-                      />
-                      {t("Delete")}
-                    </button>
-                  )}
-                </Menu.Item>
-              </div>
-            </Menu.Items>
-          </Transition>
-        </>
-      )}
-    </Menu>
-  );
-};
 
 const AdminSchedules: React.FC = () => {
   const { t } = useTranslation();
@@ -219,8 +111,6 @@ const AdminSchedules: React.FC = () => {
   };
 
   // Handle edit schedule button click
-  // Replace the handleEditSchedule function in AdminSchedules.tsx with this version:
-
   const handleEditSchedule = (schedule: ScheduleDTO) => {
     setSelectedSchedule(schedule);
 
@@ -318,19 +208,149 @@ const AdminSchedules: React.FC = () => {
       {
         id: "actions",
         header: t("Actions"),
-        cell: ({ row }) => (
-          <ActionsCell
-            row={row}
-            onEdit={handleEditSchedule}
-            onDelete={handleDeleteSchedule}
-            t={t}
-          />
-        ),
+        cell: ({ row }) => {
+          const [isOpen, setIsOpen] = useState(false);
+          const buttonRef = useRef<HTMLButtonElement | null>(null);
+          const menuRef = useRef<HTMLDivElement | null>(null);
+
+          const getMenuPosition = useCallback(() => {
+            if (!buttonRef.current)
+              return { top: 0, left: 0, shouldFlip: false };
+
+            const rect = buttonRef.current.getBoundingClientRect();
+            const menuWidth = 224; // Width of the dropdown (w-56 = 224px)
+
+            // Check vertical space
+            const spaceBelow = window.innerHeight - rect.bottom;
+            const menuHeight = 150; // Approximate height of the menu
+            const shouldFlipVertical = spaceBelow < menuHeight;
+
+            // Check horizontal space
+            const spaceRight = window.innerWidth - rect.left;
+            const shouldFlipHorizontal = spaceRight < menuWidth;
+
+            // Calculate positions
+            const top = shouldFlipVertical
+              ? rect.top - menuHeight
+              : rect.bottom;
+
+            // If not enough space on the right, align to the right edge of the button
+            const left = shouldFlipHorizontal
+              ? Math.max(0, rect.right - menuWidth)
+              : Math.max(0, rect.left);
+
+            return {
+              top,
+              left,
+              shouldFlipVertical,
+              shouldFlipHorizontal,
+            };
+          }, []);
+
+          // Close menu when clicking outside
+          useEffect(() => {
+            if (!isOpen) return;
+
+            const handleClickOutside = (event: MouseEvent) => {
+              // First check if refs have current value
+              if (!buttonRef.current || !menuRef.current) return;
+
+              const target = event.target as Node;
+
+              if (
+                !buttonRef.current.contains(target) &&
+                !menuRef.current.contains(target)
+              ) {
+                setIsOpen(false);
+              }
+            };
+
+            document.addEventListener("mousedown", handleClickOutside);
+            return () =>
+              document.removeEventListener("mousedown", handleClickOutside);
+          }, [isOpen]);
+
+          return (
+            <div className="relative inline-block text-left">
+              <button
+                ref={buttonRef}
+                onClick={() => setIsOpen(!isOpen)}
+                className="inline-flex justify-center w-full px-4 py-2 text-sm font-medium text-white bg-blue-700 border border-transparent hover:border-white rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+              >
+                {t("Actions")}
+                <ChevronDownIcon
+                  className="w-5 h-5 ml-2 -mr-1 text-gray-100"
+                  aria-hidden="true"
+                />
+              </button>
+
+              {isOpen &&
+                createPortal(
+                  (() => {
+                    // Calculate position here
+                    const {
+                      top,
+                      left,
+                      shouldFlipVertical,
+                      shouldFlipHorizontal,
+                    } = getMenuPosition();
+                    const menuStyle = {
+                      top: `${top}px`,
+                      left: `${left}px`,
+                      transformOrigin: shouldFlipVertical
+                        ? "bottom " + (shouldFlipHorizontal ? "right" : "left")
+                        : "top " + (shouldFlipHorizontal ? "right" : "left"),
+                    };
+
+                    return (
+                      <div
+                        ref={menuRef}
+                        className="fixed z-50 w-56 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+                        style={menuStyle}
+                      >
+                        <div className="py-1">
+                          <button
+                            onClick={() => {
+                              handleEditSchedule(row.original);
+                              setIsOpen(false);
+                            }}
+                            className="group flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                          >
+                            <PencilIcon
+                              className="w-5 h-5 mr-3 text-primary-500"
+                              aria-hidden="true"
+                            />
+                            {t("Edit")}
+                          </button>
+                          <button
+                            onClick={() => {
+                              handleDeleteSchedule(row.original.scheduleId);
+                              setIsOpen(false);
+                            }}
+                            className="group flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                          >
+                            <TrashIcon
+                              className="w-5 h-5 mr-3 text-red-500"
+                              aria-hidden="true"
+                            />
+                            {t("Delete")}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })(),
+                  document.body
+                )}
+            </div>
+          );
+        },
         enableSorting: false,
       },
     ],
-    [t, handleEditSchedule, handleDeleteSchedule]
+    [t]
   );
+
+  // Rest of the component remains the same...
 
   // TanStack Table instance
   const table = useReactTable({
@@ -350,6 +370,7 @@ const AdminSchedules: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Rest of the JSX remains the same... */}
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">{t("Schedule Management")}</h2>
         <button
@@ -490,7 +511,7 @@ const AdminSchedules: React.FC = () => {
           </table>
         </div>
 
-        {/* Compact Pagination */}
+        {/* Pagination section remains the same */}
         <div className="bg-white px-4 py-2 border-t border-gray-200 flex items-center justify-between">
           <div className="flex items-center space-x-2 text-sm text-gray-500">
             <button

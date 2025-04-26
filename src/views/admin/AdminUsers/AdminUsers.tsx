@@ -1,6 +1,13 @@
 // src/views/admin/AdminUsers/AdminUser.tsx
 import { Fragment } from "react";
-import React, { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
+import React, {
+  useEffect,
+  useMemo,
+  useState,
+  useRef,
+  useCallback,
+} from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import useAdminUserStore from "../../../store/adminUserStore";
@@ -270,86 +277,166 @@ const AdminUsers: React.FC = () => {
       {
         id: "actions",
         header: t("Actions"),
-        cell: ({ row }) => (
-          <Menu as="div" className="relative inline-block text-left">
-            <div>
-              <Menu.Button className="inline-flex justify-center w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+        cell: ({ row }) => {
+          const [isOpen, setIsOpen] = useState(false);
+          const buttonRef = useRef<HTMLButtonElement | null>(null);
+          const menuRef = useRef<HTMLDivElement | null>(null);
+
+          const getMenuPosition = useCallback(() => {
+            if (!buttonRef.current)
+              return { top: 0, left: 0, shouldFlip: false };
+
+            const rect = buttonRef.current.getBoundingClientRect();
+            const menuWidth = 224; // Width of the dropdown (w-56 = 224px)
+
+            // Check vertical space
+            const spaceBelow = window.innerHeight - rect.bottom;
+            const menuHeight = 150; // Approximate height of the menu
+            const shouldFlipVertical = spaceBelow < menuHeight;
+
+            // Check horizontal space
+            const spaceRight = window.innerWidth - rect.left;
+            const shouldFlipHorizontal = spaceRight < menuWidth;
+
+            // Calculate positions
+            const top = shouldFlipVertical
+              ? rect.top - menuHeight
+              : rect.bottom;
+
+            // If not enough space on the right, align to the right edge of the button
+            const left = shouldFlipHorizontal
+              ? Math.max(0, rect.right - menuWidth)
+              : Math.max(0, rect.left);
+
+            return {
+              top,
+              left,
+              shouldFlipVertical,
+              shouldFlipHorizontal,
+            };
+          }, []);
+
+          const toggleMenu = () => {
+            setIsOpen(!isOpen);
+          };
+
+          // Close menu when clicking outside
+          useEffect(() => {
+            if (!isOpen) return;
+
+            const handleClickOutside = (event: MouseEvent) => {
+              // First check if refs have current value
+              if (!buttonRef.current || !menuRef.current) return;
+
+              const target = event.target as Node;
+
+              if (
+                !buttonRef.current.contains(target) &&
+                !menuRef.current.contains(target)
+              ) {
+                setIsOpen(false);
+              }
+            };
+
+            document.addEventListener("mousedown", handleClickOutside);
+            return () =>
+              document.removeEventListener("mousedown", handleClickOutside);
+          }, [isOpen]);
+
+          return (
+            <div className="relative inline-block text-left">
+              <button
+                ref={buttonRef}
+                onClick={() => setIsOpen(!isOpen)}
+                className="inline-flex justify-center w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+              >
                 {t("Actions")}
                 <ChevronDownIcon
                   className="w-5 h-5 ml-2 -mr-1 text-gray-500"
                   aria-hidden="true"
                 />
-              </Menu.Button>
+              </button>
+
+              {isOpen &&
+                createPortal(
+                  (() => {
+                    // Calculate position here
+                    const {
+                      top,
+                      left,
+                      shouldFlipVertical,
+                      shouldFlipHorizontal,
+                    } = getMenuPosition();
+                    const menuStyle = {
+                      top: `${top}px`,
+                      left: `${left}px`,
+                      transformOrigin: shouldFlipVertical
+                        ? "bottom " + (shouldFlipHorizontal ? "right" : "left")
+                        : "top " + (shouldFlipHorizontal ? "right" : "left"),
+                    };
+
+                    return (
+                      <div
+                        ref={menuRef}
+                        className="fixed z-50 w-56 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+                        style={menuStyle}
+                      >
+                        <div className="py-1">
+                          <button
+                            onClick={() => {
+                              handleEditUser(row.original);
+                              setIsOpen(false);
+                            }}
+                            className="group flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                          >
+                            <PencilIcon
+                              className="w-5 h-5 mr-3 text-primary-500"
+                              aria-hidden="true"
+                            />
+                            {t("Edit")}
+                          </button>
+                          <button
+                            onClick={() => {
+                              handleResetPasswordClick(row.original);
+                              setIsOpen(false);
+                            }}
+                            className="group flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                          >
+                            <KeyIcon
+                              className="w-5 h-5 mr-3 text-blue-500"
+                              aria-hidden="true"
+                            />
+                            {t("Reset Password")}
+                          </button>
+                          <button
+                            onClick={() => {
+                              handleDeleteUser(row.original.id);
+                              setIsOpen(false);
+                            }}
+                            className="group flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                          >
+                            <TrashIcon
+                              className="w-5 h-5 mr-3 text-red-500"
+                              aria-hidden="true"
+                            />
+                            {t("Delete")}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })(),
+                  document.body
+                )}
             </div>
-            <Transition
-              as={Fragment}
-              enter="transition ease-out duration-100"
-              enterFrom="transform opacity-0 scale-95"
-              enterTo="transform opacity-100 scale-100"
-              leave="transition ease-in duration-75"
-              leaveFrom="transform opacity-100 scale-100"
-              leaveTo="transform opacity-0 scale-95"
-            >
-              <Menu.Items className="absolute right-0 z-10 w-56 mt-2 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
-                <div className="py-1">
-                  <Menu.Item>
-                    {({ active }) => (
-                      <button
-                        onClick={() => handleEditUser(row.original)}
-                        className={`${
-                          active ? "bg-gray-100 text-gray-900" : "text-gray-700"
-                        } group flex items-center w-full px-4 py-2 text-sm`}
-                      >
-                        <PencilIcon
-                          className="w-5 h-5 mr-3 text-primary-500"
-                          aria-hidden="true"
-                        />
-                        {t("Edit")}
-                      </button>
-                    )}
-                  </Menu.Item>
-                  <Menu.Item>
-                    {({ active }) => (
-                      <button
-                        onClick={() => handleResetPasswordClick(row.original)}
-                        className={`${
-                          active ? "bg-gray-100 text-gray-900" : "text-gray-700"
-                        } group flex items-center w-full px-4 py-2 text-sm`}
-                      >
-                        <KeyIcon
-                          className="w-5 h-5 mr-3 text-blue-500"
-                          aria-hidden="true"
-                        />
-                        {t("Reset Password")}
-                      </button>
-                    )}
-                  </Menu.Item>
-                  <Menu.Item>
-                    {({ active }) => (
-                      <button
-                        onClick={() => handleDeleteUser(row.original.id)}
-                        className={`${
-                          active ? "bg-gray-100 text-gray-900" : "text-gray-700"
-                        } group flex items-center w-full px-4 py-2 text-sm`}
-                      >
-                        <TrashIcon
-                          className="w-5 h-5 mr-3 text-red-500"
-                          aria-hidden="true"
-                        />
-                        {t("Delete")}
-                      </button>
-                    )}
-                  </Menu.Item>
-                </div>
-              </Menu.Items>
-            </Transition>
-          </Menu>
-        ),
+          );
+        },
         enableSorting: false,
       },
     ],
     [t]
   );
+
+  // Rest of the component remains the same...
 
   // TanStack Table instance
   const table = useReactTable({
@@ -369,6 +456,7 @@ const AdminUsers: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Rest of the JSX remains the same... */}
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">{t("User Management")}</h2>
         <button
