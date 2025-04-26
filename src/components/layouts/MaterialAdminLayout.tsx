@@ -27,6 +27,7 @@ import {
   Settings as SettingsIcon,
   Payment as PaymentIcon,
   Timeline as TimelineIcon,
+  SportsGymnastics as SportsGymnasticsIcon,
 } from "@mui/icons-material";
 import adminTheme from "../../theme/adminTheme";
 import useAuthStore from "../../store/authStore";
@@ -133,6 +134,11 @@ const MaterialAdminLayout = () => {
     { text: "Memberships", icon: <PaymentIcon />, path: "/admin/memeberships" },
     { text: "Schedule", icon: <TimelineIcon />, path: "/admin/schedule" },
     { text: "Settings", icon: <SettingsIcon />, path: "/admin/settings" },
+    {
+      text: "Exercise",
+      icon: <SportsGymnasticsIcon />,
+      path: "/admin/exercises",
+    },
   ];
 
   // Check if current path matches menu item path
