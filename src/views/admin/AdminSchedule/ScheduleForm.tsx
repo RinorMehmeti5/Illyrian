@@ -4,6 +4,27 @@ import { useTranslation } from "react-i18next";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import { ScheduleFormProps, ScheduleFormValues } from "./types";
+import { motion } from "framer-motion";
+import { useTheme } from "@mui/material/styles";
+import {
+  Box,
+  Button,
+  FormControl,
+  FormHelperText,
+  InputLabel,
+  MenuItem,
+  Select,
+  TextField,
+  Typography,
+  CircularProgress,
+  Divider,
+} from "@mui/material";
+import {
+  AccessTime as AccessTimeIcon,
+  CalendarMonth as CalendarMonthIcon,
+  Save as SaveIcon,
+  Cancel as CancelIcon,
+} from "@mui/icons-material";
 
 const ScheduleForm: React.FC<ScheduleFormProps> = ({
   initialValues,
@@ -13,6 +34,7 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
   isEditing,
 }) => {
   const { t } = useTranslation();
+  const theme = useTheme();
 
   // Create validation schema using Yup
   const validationSchema = Yup.object({
@@ -31,6 +53,24 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
     dayOfWeek: Yup.string().required(t("Day of week is required")),
   });
 
+  // Animation variants
+  const formVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.4,
+        staggerChildren: 0.1,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 10 },
+    visible: { opacity: 1, y: 0 },
+  };
+
   return (
     <Formik
       initialValues={initialValues}
@@ -48,111 +88,327 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
       }}
       enableReinitialize={true}
     >
-      {({ values, errors, touched, isSubmitting }) => (
-        <Form className="space-y-4">
-          <div>
-            <label
-              htmlFor="dayOfWeek"
-              className="block text-sm font-medium text-gray-700"
+      {({
+        values,
+        errors,
+        touched,
+        isSubmitting,
+        handleChange,
+        handleBlur,
+      }) => (
+        <Form>
+          <Box
+            component={motion.div}
+            variants={formVariants}
+            initial="hidden"
+            animate="visible"
+            sx={{ width: "100%" }}
+          >
+            {/* Title */}
+            <Typography
+              variant="h6"
+              component={motion.h6}
+              variants={itemVariants}
+              sx={{
+                mb: 3,
+                color: theme.palette.mode === "dark" ? "white" : "text.primary",
+                fontWeight: 600,
+              }}
             >
-              {t("Day of Week")}
-            </label>
-            <Field
-              as="select"
-              name="dayOfWeek"
-              id="dayOfWeek"
-              className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 ${
-                errors.dayOfWeek && touched.dayOfWeek
-                  ? "border-red-500"
-                  : "border-gray-300"
-              }`}
-            >
-              <option value="">{t("Select a day")}</option>
-              <option value="Monday">{t("Monday")}</option>
-              <option value="Tuesday">{t("Tuesday")}</option>
-              <option value="Wednesday">{t("Wednesday")}</option>
-              <option value="Thursday">{t("Thursday")}</option>
-              <option value="Friday">{t("Friday")}</option>
-              <option value="Saturday">{t("Saturday")}</option>
-              <option value="Sunday">{t("Sunday")}</option>
-            </Field>
-            <ErrorMessage
-              name="dayOfWeek"
-              component="div"
-              className="mt-1 text-sm text-red-600"
-            />
-          </div>
+              {isEditing
+                ? t("Update Schedule Details")
+                : t("New Schedule Details")}
+            </Typography>
 
-          <div>
-            <label
-              htmlFor="startTime"
-              className="block text-sm font-medium text-gray-700"
-            >
-              {t("Start Time")}
-            </label>
-            <Field
-              type="time"
-              name="startTime"
-              id="startTime"
-              className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 ${
-                errors.startTime && touched.startTime
-                  ? "border-red-500"
-                  : "border-gray-300"
-              }`}
-            />
-            <ErrorMessage
-              name="startTime"
-              component="div"
-              className="mt-1 text-sm text-red-600"
-            />
-          </div>
+            {/* Day of Week Select */}
+            <Box component={motion.div} variants={itemVariants} sx={{ mb: 3 }}>
+              <FormControl
+                fullWidth
+                error={!!(errors.dayOfWeek && touched.dayOfWeek)}
+                variant="outlined"
+                sx={{
+                  ".MuiOutlinedInput-root": {
+                    borderRadius: "8px",
+                    transition: "box-shadow 0.2s, border-color 0.2s",
+                    "&:hover .MuiOutlinedInput-notchedOutline": {
+                      borderColor: theme.palette.primary.main,
+                    },
+                    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                      borderColor: theme.palette.primary.main,
+                      borderWidth: "1px",
+                      boxShadow:
+                        theme.palette.mode === "dark"
+                          ? `0 0 0 2px ${theme.palette.primary.dark}30`
+                          : `0 0 0 2px ${theme.palette.primary.main}30`,
+                    },
+                  },
+                }}
+              >
+                <InputLabel
+                  htmlFor="dayOfWeek"
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 0.5,
+                  }}
+                >
+                  <CalendarMonthIcon fontSize="small" />
+                  {t("Day of Week")}
+                </InputLabel>
+                <Select
+                  id="dayOfWeek"
+                  name="dayOfWeek"
+                  value={values.dayOfWeek}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  label={t("Day of Week")}
+                  MenuProps={{
+                    PaperProps: {
+                      sx: {
+                        borderRadius: "8px",
+                        mt: 1,
+                        boxShadow:
+                          theme.palette.mode === "dark"
+                            ? "0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.4)"
+                            : "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
+                      },
+                    },
+                  }}
+                >
+                  <MenuItem value="" disabled>
+                    <em>{t("Select a day")}</em>
+                  </MenuItem>
+                  <MenuItem value="Monday">{t("Monday")}</MenuItem>
+                  <MenuItem value="Tuesday">{t("Tuesday")}</MenuItem>
+                  <MenuItem value="Wednesday">{t("Wednesday")}</MenuItem>
+                  <MenuItem value="Thursday">{t("Thursday")}</MenuItem>
+                  <MenuItem value="Friday">{t("Friday")}</MenuItem>
+                  <MenuItem value="Saturday">{t("Saturday")}</MenuItem>
+                  <MenuItem value="Sunday">{t("Sunday")}</MenuItem>
+                </Select>
+                {errors.dayOfWeek && touched.dayOfWeek && (
+                  <FormHelperText error>{errors.dayOfWeek}</FormHelperText>
+                )}
+              </FormControl>
+            </Box>
 
-          <div>
-            <label
-              htmlFor="endTime"
-              className="block text-sm font-medium text-gray-700"
+            {/* Time inputs row */}
+            <Box
+              component={motion.div}
+              variants={itemVariants}
+              sx={{
+                display: "flex",
+                flexDirection: { xs: "column", sm: "row" },
+                gap: 2,
+                mb: 4,
+              }}
             >
-              {t("End Time")}
-            </label>
-            <Field
-              type="time"
-              name="endTime"
-              id="endTime"
-              className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 ${
-                errors.endTime && touched.endTime
-                  ? "border-red-500"
-                  : "border-gray-300"
-              }`}
-            />
-            <ErrorMessage
-              name="endTime"
-              component="div"
-              className="mt-1 text-sm text-red-600"
-            />
-          </div>
+              {/* Start Time */}
+              <FormControl
+                fullWidth
+                error={!!(errors.startTime && touched.startTime)}
+                variant="outlined"
+                sx={{
+                  ".MuiOutlinedInput-root": {
+                    borderRadius: "8px",
+                    transition: "box-shadow 0.2s, border-color 0.2s",
+                    "&:hover .MuiOutlinedInput-notchedOutline": {
+                      borderColor: theme.palette.primary.main,
+                    },
+                    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                      borderColor: theme.palette.primary.main,
+                      borderWidth: "1px",
+                      boxShadow:
+                        theme.palette.mode === "dark"
+                          ? `0 0 0 2px ${theme.palette.primary.dark}30`
+                          : `0 0 0 2px ${theme.palette.primary.main}30`,
+                    },
+                  },
+                }}
+              >
+                <InputLabel
+                  htmlFor="startTime"
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 0.5,
+                  }}
+                >
+                  <AccessTimeIcon fontSize="small" />
+                  {t("Start Time")}
+                </InputLabel>
+                <TextField
+                  id="startTime"
+                  name="startTime"
+                  type="time"
+                  value={values.startTime}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  label={t("Start Time")}
+                  InputProps={{
+                    startAdornment: (
+                      <AccessTimeIcon
+                        fontSize="small"
+                        color="action"
+                        sx={{ mr: 1, opacity: 0.7 }}
+                      />
+                    ),
+                  }}
+                  InputLabelProps={{
+                    shrink: true,
+                  }}
+                />
+                {errors.startTime && touched.startTime && (
+                  <FormHelperText error>{errors.startTime}</FormHelperText>
+                )}
+              </FormControl>
 
-          <div className="flex justify-end space-x-3 pt-4">
-            <button
-              type="button"
-              onClick={onCancel}
-              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+              {/* End Time */}
+              <FormControl
+                fullWidth
+                error={!!(errors.endTime && touched.endTime)}
+                variant="outlined"
+                sx={{
+                  ".MuiOutlinedInput-root": {
+                    borderRadius: "8px",
+                    transition: "box-shadow 0.2s, border-color 0.2s",
+                    "&:hover .MuiOutlinedInput-notchedOutline": {
+                      borderColor: theme.palette.primary.main,
+                    },
+                    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                      borderColor: theme.palette.primary.main,
+                      borderWidth: "1px",
+                      boxShadow:
+                        theme.palette.mode === "dark"
+                          ? `0 0 0 2px ${theme.palette.primary.dark}30`
+                          : `0 0 0 2px ${theme.palette.primary.main}30`,
+                    },
+                  },
+                }}
+              >
+                <InputLabel
+                  htmlFor="endTime"
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 0.5,
+                  }}
+                >
+                  <AccessTimeIcon fontSize="small" />
+                  {t("End Time")}
+                </InputLabel>
+                <TextField
+                  id="endTime"
+                  name="endTime"
+                  type="time"
+                  value={values.endTime}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  label={t("End Time")}
+                  InputProps={{
+                    startAdornment: (
+                      <AccessTimeIcon
+                        fontSize="small"
+                        color="action"
+                        sx={{ mr: 1, opacity: 0.7 }}
+                      />
+                    ),
+                  }}
+                  InputLabelProps={{
+                    shrink: true,
+                  }}
+                />
+                {errors.endTime && touched.endTime && (
+                  <FormHelperText error>{errors.endTime}</FormHelperText>
+                )}
+              </FormControl>
+            </Box>
+
+            <Divider sx={{ my: 3 }} />
+
+            {/* Form Actions */}
+            <Box
+              component={motion.div}
+              variants={itemVariants}
+              sx={{
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: 2,
+                mt: 2,
+              }}
             >
-              {t("Cancel")}
-            </button>
-            <button
-              type="submit"
-              disabled={isLoading || isSubmitting}
-              className={`px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 ${
-                isLoading || isSubmitting ? "opacity-70 cursor-not-allowed" : ""
-              }`}
-            >
-              {isLoading || isSubmitting
-                ? t("Saving...")
-                : isEditing
-                ? t("Update")
-                : t("Create")}
-            </button>
-          </div>
+              <Button
+                type="button"
+                onClick={onCancel}
+                variant="outlined"
+                color="inherit"
+                startIcon={<CancelIcon />}
+                disabled={isLoading || isSubmitting}
+                sx={{
+                  borderRadius: "8px",
+                  px: 3,
+                  py: 1,
+                  borderColor:
+                    theme.palette.mode === "dark"
+                      ? "rgba(255,255,255,0.15)"
+                      : "rgba(0,0,0,0.15)",
+                  color: theme.palette.text.primary,
+                  "&:hover": {
+                    borderColor:
+                      theme.palette.mode === "dark"
+                        ? "rgba(255,255,255,0.3)"
+                        : "rgba(0,0,0,0.3)",
+                    backgroundColor:
+                      theme.palette.mode === "dark"
+                        ? "rgba(255,255,255,0.05)"
+                        : "rgba(0,0,0,0.05)",
+                  },
+                  transition: "all 0.2s",
+                }}
+              >
+                {t("Cancel")}
+              </Button>
+              <Button
+                type="submit"
+                variant="contained"
+                color="primary"
+                startIcon={
+                  isLoading || isSubmitting ? (
+                    <CircularProgress size={20} color="inherit" />
+                  ) : (
+                    <SaveIcon />
+                  )
+                }
+                disabled={isLoading || isSubmitting}
+                sx={{
+                  borderRadius: "8px",
+                  px: 3,
+                  py: 1,
+                  boxShadow:
+                    theme.palette.mode === "dark"
+                      ? "0 4px 12px rgba(99, 102, 241, 0.3)"
+                      : "0 4px 12px rgba(79, 70, 229, 0.2)",
+                  "&:hover": {
+                    boxShadow:
+                      theme.palette.mode === "dark"
+                        ? "0 6px 16px rgba(99, 102, 241, 0.4)"
+                        : "0 6px 16px rgba(79, 70, 229, 0.3)",
+                    transform: "translateY(-2px)",
+                  },
+                  "&:active": {
+                    transform: "translateY(0)",
+                  },
+                  transition: "all 0.2s",
+                }}
+              >
+                {isLoading || isSubmitting
+                  ? t("Saving...")
+                  : isEditing
+                  ? t("Update Schedule")
+                  : t("Create Schedule")}
+              </Button>
+            </Box>
+          </Box>
         </Form>
       )}
     </Formik>

@@ -1,15 +1,18 @@
 // App.tsx
 import React from "react";
-import { ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import AppRoutes from "./AppRoutes/AppRoutes";
+import { ThemeProvider } from "./contexts/ThemeContext";
+import CustomToastContainer from "./components/ui/CustomToast";
+import { AnimatePresence } from "framer-motion";
 
 function App() {
   return (
-    <div>
-      <ToastContainer position="top-right" autoClose={3000} />
-      <AppRoutes />
-    </div>
+    <ThemeProvider>
+      <AnimatePresence mode="wait">
+        <AppRoutes />
+      </AnimatePresence>
+      <CustomToastContainer />
+    </ThemeProvider>
   );
 }
 

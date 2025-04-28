@@ -7,7 +7,6 @@ import React, {
   useRef,
 } from "react";
 import { createPortal } from "react-dom";
-
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import useScheduleStore from "../../../store/scheduleStore";
@@ -29,14 +28,52 @@ import {
 import ScheduleForm from "./ScheduleForm";
 import ScheduleModal from "./ScheduleModal";
 import { ScheduleFormValues } from "./types";
+import { motion, AnimatePresence } from "framer-motion";
+import { useTheme } from "@mui/material/styles";
+import { alpha } from "@mui/material/styles";
 import {
-  ChevronDownIcon,
-  PencilIcon,
-  TrashIcon,
-} from "@heroicons/react/24/outline";
+  Box,
+  Button,
+  Typography,
+  Paper,
+  IconButton,
+  Tooltip,
+  InputBase,
+  Chip,
+  Badge,
+  Divider,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  Card,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TablePagination,
+  TableRow,
+  TableSortLabel,
+  Fade,
+  CircularProgress,
+} from "@mui/material";
+import {
+  Add as AddIcon,
+  Search as SearchIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  FilterList as FilterListIcon,
+  ChevronLeft as ChevronLeftIcon,
+  ChevronRight as ChevronRightIcon,
+  MoreVert as MoreVertIcon,
+  ArrowDownward as ArrowDownwardIcon,
+  ArrowUpward as ArrowUpwardIcon,
+  Timeline as TimelineIcon,
+} from "@mui/icons-material";
 
 const AdminSchedules: React.FC = () => {
   const { t } = useTranslation();
+  const theme = useTheme();
   const {
     schedules,
     isLoading,
@@ -65,19 +102,44 @@ const AdminSchedules: React.FC = () => {
   // TanStack Table state
   const [globalFilter, setGlobalFilter] = useState("");
   const [sorting, setSorting] = useState<SortingState>([]);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
+
+  // Menu state for action dropdown
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [selectedScheduleId, setSelectedScheduleId] = useState<number | null>(
+    null
+  );
 
   // Fetch schedules when component mounts
   useEffect(() => {
     fetchSchedules();
   }, [fetchSchedules]);
 
-  // Show error toast if error occurs
+  // Show toast if error occurs
   useEffect(() => {
     if (error) {
-      toast.error(error);
+      toast.error(error, {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        style: {
+          background: theme.palette.mode === "dark" ? "#1e293b" : "#ffffff",
+          color: theme.palette.mode === "dark" ? "#ffffff" : "#0f172a",
+          borderLeft: `4px solid ${theme.palette.error.main}`,
+          boxShadow:
+            theme.palette.mode === "dark"
+              ? "0 4px 12px rgba(0, 0, 0, 0.3)"
+              : "0 4px 12px rgba(0, 0, 0, 0.1)",
+        },
+      });
       clearError();
     }
-  }, [error, clearError]);
+  }, [error, clearError, theme]);
 
   // Handle form submission
   const handleFormSubmit = async (values: ScheduleFormValues) => {
@@ -104,13 +166,31 @@ const AdminSchedules: React.FC = () => {
       toast.success(
         isEditing
           ? t("Schedule updated successfully")
-          : t("Schedule created successfully")
+          : t("Schedule created successfully"),
+        {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+          style: {
+            background: theme.palette.mode === "dark" ? "#1e293b" : "#ffffff",
+            color: theme.palette.mode === "dark" ? "#ffffff" : "#0f172a",
+            borderLeft: `4px solid ${theme.palette.success.main}`,
+            boxShadow:
+              theme.palette.mode === "dark"
+                ? "0 4px 12px rgba(0, 0, 0, 0.3)"
+                : "0 4px 12px rgba(0, 0, 0, 0.1)",
+          },
+        }
       );
       closeModal();
     }
   };
 
-  // Handle edit schedule button click
+  // Handle edit button click
   const handleEditSchedule = (schedule: ScheduleDTO) => {
     setSelectedSchedule(schedule);
 
@@ -146,7 +226,6 @@ const AdminSchedules: React.FC = () => {
       }
     } catch (error) {
       console.error("Error parsing schedule dates:", error);
-      // Use default times if parsing fails
     }
 
     setInitialFormValues({
@@ -158,19 +237,43 @@ const AdminSchedules: React.FC = () => {
 
     setIsEditing(true);
     setIsModalOpen(true);
+    handleMenuClose();
   };
 
-  // Handle delete schedule button click
+  // Handle delete button click
   const handleDeleteSchedule = async (id: number) => {
+    const success = await deleteSchedule(id);
+    if (success) {
+      toast.success(t("Schedule deleted successfully"), {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        style: {
+          background: theme.palette.mode === "dark" ? "#1e293b" : "#ffffff",
+          color: theme.palette.mode === "dark" ? "#ffffff" : "#0f172a",
+          borderLeft: `4px solid ${theme.palette.success.main}`,
+          boxShadow:
+            theme.palette.mode === "dark"
+              ? "0 4px 12px rgba(0, 0, 0, 0.3)"
+              : "0 4px 12px rgba(0, 0, 0, 0.1)",
+        },
+      });
+    }
+    handleMenuClose();
+  };
+
+  // Confirm delete dialog
+  const handleConfirmDelete = (id: number) => {
     if (window.confirm(t("Are you sure you want to delete this schedule?"))) {
-      const success = await deleteSchedule(id);
-      if (success) {
-        toast.success(t("Schedule deleted successfully"));
-      }
+      handleDeleteSchedule(id);
     }
   };
 
-  // Handle create new schedule button click
+  // Handle create button click
   const handleCreateSchedule = () => {
     setInitialFormValues({
       startTime: "09:00",
@@ -181,13 +284,40 @@ const AdminSchedules: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  // Close modal and reset state
+  // Close modal
   const closeModal = () => {
     setIsModalOpen(false);
     setSelectedSchedule(null);
   };
 
-  // TanStack Table columns
+  // Menu actions
+  const handleMenuOpen = (
+    event: React.MouseEvent<HTMLElement>,
+    scheduleId: number
+  ) => {
+    event.stopPropagation();
+    setAnchorEl(event.currentTarget);
+    setSelectedScheduleId(scheduleId);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+    setSelectedScheduleId(null);
+  };
+
+  // Pagination handlers
+  const handleChangePage = (event: unknown, newPage: number) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  // Table columns
   const columns = useMemo<ColumnDef<ScheduleDTO, any>[]>(
     () => [
       {
@@ -207,150 +337,40 @@ const AdminSchedules: React.FC = () => {
       },
       {
         id: "actions",
-        header: t("Actions"),
-        cell: ({ row }) => {
-          const [isOpen, setIsOpen] = useState(false);
-          const buttonRef = useRef<HTMLButtonElement | null>(null);
-          const menuRef = useRef<HTMLDivElement | null>(null);
-
-          const getMenuPosition = useCallback(() => {
-            if (!buttonRef.current)
-              return { top: 0, left: 0, shouldFlip: false };
-
-            const rect = buttonRef.current.getBoundingClientRect();
-            const menuWidth = 224; // Width of the dropdown (w-56 = 224px)
-
-            // Check vertical space
-            const spaceBelow = window.innerHeight - rect.bottom;
-            const menuHeight = 150; // Approximate height of the menu
-            const shouldFlipVertical = spaceBelow < menuHeight;
-
-            // Check horizontal space
-            const spaceRight = window.innerWidth - rect.left;
-            const shouldFlipHorizontal = spaceRight < menuWidth;
-
-            // Calculate positions
-            const top = shouldFlipVertical
-              ? rect.top - menuHeight
-              : rect.bottom;
-
-            // If not enough space on the right, align to the right edge of the button
-            const left = shouldFlipHorizontal
-              ? Math.max(0, rect.right - menuWidth)
-              : Math.max(0, rect.left);
-
-            return {
-              top,
-              left,
-              shouldFlipVertical,
-              shouldFlipHorizontal,
-            };
-          }, []);
-
-          // Close menu when clicking outside
-          useEffect(() => {
-            if (!isOpen) return;
-
-            const handleClickOutside = (event: MouseEvent) => {
-              // First check if refs have current value
-              if (!buttonRef.current || !menuRef.current) return;
-
-              const target = event.target as Node;
-
-              if (
-                !buttonRef.current.contains(target) &&
-                !menuRef.current.contains(target)
-              ) {
-                setIsOpen(false);
-              }
-            };
-
-            document.addEventListener("mousedown", handleClickOutside);
-            return () =>
-              document.removeEventListener("mousedown", handleClickOutside);
-          }, [isOpen]);
-
-          return (
-            <div className="relative inline-block text-left">
-              <button
-                ref={buttonRef}
-                onClick={() => setIsOpen(!isOpen)}
-                className="inline-flex justify-center w-full px-4 py-2 text-sm font-medium text-white bg-blue-700 border border-transparent hover:border-white rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+        header: "",
+        cell: ({ row }) => (
+          <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+            <Tooltip title={t("Actions")}>
+              <IconButton
+                aria-label="actions"
+                size="small"
+                onClick={(e) => handleMenuOpen(e, row.original.scheduleId)}
+                sx={{
+                  transition: "all 0.2s",
+                  color: theme.palette.text.secondary,
+                  backgroundColor:
+                    theme.palette.mode === "dark"
+                      ? "rgba(255, 255, 255, 0.05)"
+                      : "rgba(0, 0, 0, 0.04)",
+                  "&:hover": {
+                    color: theme.palette.primary.main,
+                    backgroundColor:
+                      theme.palette.mode === "dark"
+                        ? "rgba(255, 255, 255, 0.08)"
+                        : "rgba(0, 0, 0, 0.08)",
+                  },
+                }}
               >
-                {t("Actions")}
-                <ChevronDownIcon
-                  className="w-5 h-5 ml-2 -mr-1 text-gray-100"
-                  aria-hidden="true"
-                />
-              </button>
-
-              {isOpen &&
-                createPortal(
-                  (() => {
-                    // Calculate position here
-                    const {
-                      top,
-                      left,
-                      shouldFlipVertical,
-                      shouldFlipHorizontal,
-                    } = getMenuPosition();
-                    const menuStyle = {
-                      top: `${top}px`,
-                      left: `${left}px`,
-                      transformOrigin: shouldFlipVertical
-                        ? "bottom " + (shouldFlipHorizontal ? "right" : "left")
-                        : "top " + (shouldFlipHorizontal ? "right" : "left"),
-                    };
-
-                    return (
-                      <div
-                        ref={menuRef}
-                        className="fixed z-50 w-56 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
-                        style={menuStyle}
-                      >
-                        <div className="py-1">
-                          <button
-                            onClick={() => {
-                              handleEditSchedule(row.original);
-                              setIsOpen(false);
-                            }}
-                            className="group flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                          >
-                            <PencilIcon
-                              className="w-5 h-5 mr-3 text-primary-500"
-                              aria-hidden="true"
-                            />
-                            {t("Edit")}
-                          </button>
-                          <button
-                            onClick={() => {
-                              handleDeleteSchedule(row.original.scheduleId);
-                              setIsOpen(false);
-                            }}
-                            className="group flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                          >
-                            <TrashIcon
-                              className="w-5 h-5 mr-3 text-red-500"
-                              aria-hidden="true"
-                            />
-                            {t("Delete")}
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })(),
-                  document.body
-                )}
-            </div>
-          );
-        },
+                <MoreVertIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          </Box>
+        ),
         enableSorting: false,
       },
     ],
-    [t]
+    [t, theme]
   );
-
-  // Rest of the component remains the same...
 
   // TanStack Table instance
   const table = useReactTable({
@@ -359,6 +379,10 @@ const AdminSchedules: React.FC = () => {
     state: {
       globalFilter,
       sorting,
+      pagination: {
+        pageIndex: page,
+        pageSize: rowsPerPage,
+      },
     },
     onGlobalFilterChange: setGlobalFilter,
     onSortingChange: setSorting,
@@ -368,226 +392,635 @@ const AdminSchedules: React.FC = () => {
     getPaginationRowModel: getPaginationRowModel(),
   });
 
+  // Get day of week chip color
+  const getDayColor = (day: string) => {
+    const colors: Record<string, string> = {
+      Monday: theme.palette.primary.main,
+      Tuesday: "#10b981", // emerald-500
+      Wednesday: "#f59e0b", // amber-500
+      Thursday: "#3b82f6", // blue-500
+      Friday: "#8b5cf6", // violet-500
+      Saturday: "#ec4899", // pink-500
+      Sunday: "#ef4444", // red-500
+    };
+    return colors[day] || theme.palette.primary.main;
+  };
+
   return (
-    <div className="space-y-6">
-      {/* Rest of the JSX remains the same... */}
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">{t("Schedule Management")}</h2>
-        <button
-          onClick={handleCreateSchedule}
-          className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+    >
+      <Box sx={{ maxWidth: 1200, margin: "0 auto" }}>
+        {/* Header */}
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            mb: 4,
+            flexWrap: "wrap",
+            gap: 2,
+          }}
         >
-          {t("Add New Schedule")}
-        </button>
-      </div>
-
-      {/* Schedules Table */}
-      <div className="bg-white shadow-sm rounded-md overflow-hidden">
-        <div className="flex justify-between items-center px-4 py-3 border-b">
-          <h3 className="text-base font-medium text-gray-700">
-            {t("Schedules")}
-          </h3>
-          <div className="relative w-64">
-            <input
-              type="text"
-              value={globalFilter ?? ""}
-              onChange={(e) => setGlobalFilter(e.target.value)}
-              placeholder={t("Search...")}
-              className="w-full text-sm py-1.5 pl-8 pr-3 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
-            />
-            <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-4 w-4 text-gray-400"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
-            </div>
-          </div>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead>
-              {table.getHeaderGroups().map((headerGroup) => (
-                <tr key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => (
-                    <th
-                      key={header.id}
-                      onClick={header.column.getToggleSortingHandler()}
-                      className="bg-gray-50 px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                    >
-                      <div className="flex items-center space-x-1">
-                        <span>
-                          {flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                        </span>
-                        {header.column.getCanSort() && (
-                          <span className="text-gray-400">
-                            {{
-                              asc: " ↑",
-                              desc: " ↓",
-                            }[header.column.getIsSorted() as string] ?? " ↕"}
-                          </span>
-                        )}
-                      </div>
-                    </th>
-                  ))}
-                </tr>
-              ))}
-            </thead>
-            <tbody className="divide-y divide-gray-200 bg-white">
-              {isLoading && !schedules.length ? (
-                <tr>
-                  <td
-                    colSpan={columns.length}
-                    className="px-4 py-3 text-center text-sm text-gray-500"
-                  >
-                    <div className="p-6 text-center">
-                      <svg
-                        className="animate-spin mx-auto h-8 w-8 text-primary-600"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        ></circle>
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        ></path>
-                      </svg>
-                      <p className="mt-2">{t("Loading schedules...")}</p>
-                    </div>
-                  </td>
-                </tr>
-              ) : table.getRowModel().rows.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={columns.length}
-                    className="px-4 py-3 text-center text-sm text-gray-500"
-                  >
-                    {t("No schedules found.")}
-                  </td>
-                </tr>
-              ) : (
-                table.getRowModel().rows.map((row) => (
-                  <tr
-                    key={row.id}
-                    className="hover:bg-gray-50 transition-colors duration-150 ease-in-out"
-                  >
-                    {row.getVisibleCells().map((cell) => (
-                      <td
-                        key={cell.id}
-                        className="px-4 py-2 text-sm text-gray-600 font-normal whitespace-nowrap"
-                      >
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
-                        )}
-                      </td>
-                    ))}
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Pagination section remains the same */}
-        <div className="bg-white px-4 py-2 border-t border-gray-200 flex items-center justify-between">
-          <div className="flex items-center space-x-2 text-sm text-gray-500">
-            <button
-              onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage()}
-              className="p-1 rounded border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-4 w-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 19l-7-7 7-7"
-                />
-              </svg>
-            </button>
-            <span className="text-xs">
-              {t("Page")} {table.getState().pagination.pageIndex + 1} {t("of")}{" "}
-              {table.getPageCount()}
-            </span>
-            <button
-              onClick={() => table.nextPage()}
-              disabled={!table.getCanNextPage()}
-              className="p-1 rounded border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-4 w-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 5l7 7-7 7"
-                />
-              </svg>
-            </button>
-          </div>
-          <select
-            value={table.getState().pagination.pageSize}
-            onChange={(e) => table.setPageSize(Number(e.target.value))}
-            className="text-xs border border-gray-300 rounded px-1 py-1 bg-white"
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.3, delay: 0.1 }}
           >
-            {[5, 10, 20, 50].map((pageSize) => (
-              <option key={pageSize} value={pageSize}>
-                {pageSize} / {t("page")}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
+            <Typography
+              variant="h4"
+              component="h1"
+              sx={{
+                fontWeight: 700,
+                color: theme.palette.mode === "dark" ? "white" : "text.primary",
+                mb: 1,
+              }}
+            >
+              {t("Schedule Management")}
+            </Typography>
+            <Typography
+              variant="body1"
+              color="text.secondary"
+              sx={{ maxWidth: 500 }}
+            >
+              {t(
+                "Create and manage gym operation schedules across different days of the week."
+              )}
+            </Typography>
+          </motion.div>
 
-      {/* Schedule Form Modal */}
-      <ScheduleModal
-        isOpen={isModalOpen}
-        onClose={closeModal}
-        title={isEditing ? t("Edit Schedule") : t("Create New Schedule")}
-      >
-        <ScheduleForm
-          initialValues={initialFormValues}
-          onSubmit={handleFormSubmit}
-          onCancel={closeModal}
-          isLoading={isLoading}
-          isEditing={isEditing}
-        />
-      </ScheduleModal>
-    </div>
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.3, delay: 0.2 }}
+          >
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={handleCreateSchedule}
+              sx={{
+                px: 3,
+                py: 1.2,
+                borderRadius: "8px",
+                backgroundColor: theme.palette.primary.main,
+                color: "white",
+                fontWeight: 500,
+                boxShadow:
+                  theme.palette.mode === "dark"
+                    ? "0 4px 12px rgba(99, 102, 241, 0.3)"
+                    : "0 4px 12px rgba(79, 70, 229, 0.2)",
+                "&:hover": {
+                  backgroundColor: theme.palette.primary.dark,
+                  transform: "translateY(-2px)",
+                  boxShadow:
+                    theme.palette.mode === "dark"
+                      ? "0 6px 16px rgba(99, 102, 241, 0.4)"
+                      : "0 6px 16px rgba(79, 70, 229, 0.3)",
+                },
+                transition: "all 0.2s ease",
+              }}
+            >
+              {t("Add New Schedule")}
+            </Button>
+          </motion.div>
+        </Box>
+
+        {/* Filters and Search */}
+        <Paper
+          elevation={0}
+          sx={{
+            p: 2,
+            mb: 3,
+            display: "flex",
+            flexWrap: "wrap",
+            justifyContent: "space-between",
+            alignItems: "center",
+            borderRadius: "12px",
+            backgroundColor:
+              theme.palette.mode === "dark"
+                ? "rgba(255,255,255,0.05)"
+                : "white",
+            boxShadow:
+              theme.palette.mode === "dark"
+                ? "0 4px 12px rgba(0, 0, 0, 0.1)"
+                : "0 4px 12px rgba(0, 0, 0, 0.05)",
+            gap: 2,
+          }}
+          component={motion.div}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.3 }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", ml: 1, flex: 1 }}>
+            <Box
+              sx={{
+                position: "relative",
+                borderRadius: "8px",
+                backgroundColor:
+                  theme.palette.mode === "dark"
+                    ? "rgba(255, 255, 255, 0.05)"
+                    : "rgba(0, 0, 0, 0.04)",
+                width: { xs: "100%", sm: 300 },
+                display: "flex",
+                alignItems: "center",
+              }}
+            >
+              <Box sx={{ pl: 2, pr: 1, display: "flex", alignItems: "center" }}>
+                <SearchIcon color="action" />
+              </Box>
+              <InputBase
+                placeholder={t("Search schedules...")}
+                value={globalFilter || ""}
+                onChange={(e) => setGlobalFilter(e.target.value)}
+                sx={{
+                  flex: 1,
+                  fontSize: "0.875rem",
+                  color: "inherit",
+                  p: 1,
+                  width: "100%",
+                }}
+                inputProps={{ "aria-label": "search" }}
+              />
+            </Box>
+          </Box>
+
+          <Box sx={{ display: "flex", gap: 1, alignItems: "center", mr: 1 }}>
+            <Typography variant="body2" color="text.secondary" sx={{ mr: 1 }}>
+              {t("Filter by:")}
+            </Typography>
+            {[
+              "Monday",
+              "Tuesday",
+              "Wednesday",
+              "Thursday",
+              "Friday",
+              "Saturday",
+              "Sunday",
+            ].map((day) => (
+              <Chip
+                key={day}
+                label={t(day)}
+                size="small"
+                variant="outlined"
+                onClick={() => setGlobalFilter(day)}
+                sx={{
+                  borderColor: getDayColor(day),
+                  color: getDayColor(day),
+                  "&:hover": {
+                    backgroundColor: alpha(getDayColor(day), 0.1),
+                  },
+                  ...(globalFilter === day && {
+                    backgroundColor: alpha(getDayColor(day), 0.1),
+                    borderColor: getDayColor(day),
+                    color: getDayColor(day),
+                  }),
+                }}
+              />
+            ))}
+          </Box>
+        </Paper>
+
+        {/* Schedules Table */}
+        <Paper
+          elevation={0}
+          sx={{
+            width: "100%",
+            overflow: "hidden",
+            borderRadius: "12px",
+            backgroundColor:
+              theme.palette.mode === "dark"
+                ? "rgba(255,255,255,0.03)"
+                : "white",
+            boxShadow:
+              theme.palette.mode === "dark"
+                ? "0 4px 12px rgba(0, 0, 0, 0.1)"
+                : "0 4px 12px rgba(0, 0, 0, 0.05)",
+            transition: "box-shadow 0.3s ease-in-out",
+            "&:hover": {
+              boxShadow:
+                theme.palette.mode === "dark"
+                  ? "0 8px 16px rgba(0, 0, 0, 0.2)"
+                  : "0 8px 16px rgba(0, 0, 0, 0.1)",
+            },
+          }}
+          component={motion.div}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.4 }}
+        >
+          <Box
+            sx={{
+              px: 3,
+              py: 2,
+              borderBottom: `1px solid ${theme.palette.divider}`,
+            }}
+          >
+            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+              {t("Schedules")}
+            </Typography>
+          </Box>
+
+          <TableContainer>
+            <Table sx={{ minWidth: 650 }} aria-label="schedules table">
+              <TableHead>
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <TableRow key={headerGroup.id}>
+                    {headerGroup.headers.map((header) => (
+                      <TableCell
+                        key={header.id}
+                        align={header.id === "actions" ? "right" : "left"}
+                        sortDirection={
+                          header.column.getIsSorted()
+                            ? header.column.getIsSorted() === "asc"
+                              ? "asc"
+                              : "desc"
+                            : false
+                        }
+                        sx={{
+                          backgroundColor:
+                            theme.palette.mode === "dark"
+                              ? "rgba(255,255,255,0.02)"
+                              : "rgba(0,0,0,0.01)",
+                          color: theme.palette.text.secondary,
+                          fontWeight: 600,
+                          py: 2,
+                        }}
+                      >
+                        {header.isPlaceholder ? null : (
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              cursor: header.column.getCanSort()
+                                ? "pointer"
+                                : "default",
+                            }}
+                            onClick={header.column.getToggleSortingHandler()}
+                          >
+                            {flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
+                            {header.column.getCanSort() && (
+                              <Box
+                                sx={{
+                                  position: "relative",
+                                  ml: 1,
+                                  display: "flex",
+                                  alignItems: "center",
+                                }}
+                              >
+                                {header.column.getIsSorted() ? (
+                                  header.column.getIsSorted() === "asc" ? (
+                                    <ArrowUpwardIcon sx={{ fontSize: 16 }} />
+                                  ) : (
+                                    <ArrowDownwardIcon sx={{ fontSize: 16 }} />
+                                  )
+                                ) : (
+                                  <FilterListIcon
+                                    sx={{ fontSize: 16, opacity: 0.5 }}
+                                  />
+                                )}
+                              </Box>
+                            )}
+                          </Box>
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))}
+              </TableHead>
+              <TableBody>
+                {isLoading && !schedules.length ? (
+                  <TableRow>
+                    <TableCell colSpan={columns.length} align="center">
+                      <Box
+                        sx={{
+                          py: 8,
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "center",
+                          gap: 2,
+                        }}
+                      >
+                        <CircularProgress size={40} color="primary" />
+                        <Typography variant="body1" color="text.secondary">
+                          {t("Loading schedules...")}
+                        </Typography>
+                      </Box>
+                    </TableCell>
+                  </TableRow>
+                ) : table.getRowModel().rows.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={columns.length} align="center">
+                      <Box
+                        sx={{
+                          py: 8,
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "center",
+                          gap: 2,
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            width: 60,
+                            height: 60,
+                            borderRadius: "50%",
+                            backgroundColor:
+                              theme.palette.mode === "dark"
+                                ? "rgba(255,255,255,0.05)"
+                                : "rgba(0,0,0,0.04)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                        >
+                          <TimelineIcon
+                            sx={{
+                              fontSize: 30,
+                              color: theme.palette.text.secondary,
+                            }}
+                          />
+                        </Box>
+                        <Typography variant="h6" color="text.secondary">
+                          {t("No schedules found")}
+                        </Typography>
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          sx={{ maxWidth: 300, textAlign: "center" }}
+                        >
+                          {t(
+                            "There are no schedules matching your search criteria. Try adjusting your search or create a new schedule."
+                          )}
+                        </Typography>
+                        <Button
+                          variant="outlined"
+                          startIcon={<AddIcon />}
+                          onClick={handleCreateSchedule}
+                          sx={{ mt: 2 }}
+                        >
+                          {t("Add New Schedule")}
+                        </Button>
+                      </Box>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  <AnimatePresence>
+                    {table.getRowModel().rows.map((row) => (
+                      <TableRow
+                        key={row.id}
+                        hover
+                        component={motion.tr}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        transition={{ duration: 0.2 }}
+                        sx={{
+                          "&:last-child td, &:last-child th": { border: 0 },
+                          "&:hover": {
+                            backgroundColor:
+                              theme.palette.mode === "dark"
+                                ? "rgba(255,255,255,0.05)"
+                                : "rgba(0,0,0,0.02)",
+                          },
+                          cursor: "pointer",
+                          transition: "background-color 0.2s",
+                        }}
+                        onClick={() => handleEditSchedule(row.original)}
+                      >
+                        {row.getVisibleCells().map((cell) => {
+                          // Special handling for day of week cell
+                          if (cell.column.id === "dayOfWeek") {
+                            return (
+                              <TableCell
+                                key={cell.id}
+                                component="th"
+                                scope="row"
+                              >
+                                <Chip
+                                  label={cell.getValue() as string}
+                                  size="small"
+                                  sx={{
+                                    backgroundColor: alpha(
+                                      getDayColor(cell.getValue() as string),
+                                      0.15
+                                    ),
+                                    color: getDayColor(
+                                      cell.getValue() as string
+                                    ),
+                                    fontWeight: 500,
+                                    borderRadius: "6px",
+                                  }}
+                                />
+                              </TableCell>
+                            );
+                          }
+
+                          // Default rendering for other cells
+                          return (
+                            <TableCell
+                              key={cell.id}
+                              align={
+                                cell.column.id === "actions" ? "right" : "left"
+                              }
+                              onClick={
+                                cell.column.id === "actions"
+                                  ? (e) => e.stopPropagation()
+                                  : undefined
+                              }
+                            >
+                              {flexRender(
+                                cell.column.columnDef.cell,
+                                cell.getContext()
+                              )}
+                            </TableCell>
+                          );
+                        })}
+                      </TableRow>
+                    ))}
+                  </AnimatePresence>
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+
+          {/* Table Pagination */}
+          <TablePagination
+            rowsPerPageOptions={[5, 10, 25]}
+            component="div"
+            count={table.getFilteredRowModel().rows.length}
+            rowsPerPage={rowsPerPage}
+            page={page}
+            onPageChange={handleChangePage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+            sx={{
+              borderTop: `1px solid ${theme.palette.divider}`,
+              ".MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows":
+                {
+                  fontSize: "0.875rem",
+                },
+              ".MuiTablePagination-actions": {
+                "& button": {
+                  transition: "all 0.2s",
+                  "&:hover": {
+                    backgroundColor:
+                      theme.palette.mode === "dark"
+                        ? "rgba(255,255,255,0.1)"
+                        : "rgba(0,0,0,0.1)",
+                  },
+                  "&:active": {
+                    transform: "scale(0.95)",
+                  },
+                },
+              },
+            }}
+            ActionsComponent={({ count, page, rowsPerPage, onPageChange }) => (
+              <Box sx={{ flexShrink: 0, ml: 2.5 }}>
+                <IconButton
+                  onClick={(e) => onPageChange(e, page - 1)}
+                  disabled={page === 0}
+                  aria-label="previous page"
+                  sx={{
+                    color: theme.palette.text.secondary,
+                    "&.Mui-disabled": {
+                      opacity: 0.3,
+                    },
+                  }}
+                >
+                  <ChevronLeftIcon />
+                </IconButton>
+                <IconButton
+                  onClick={(e) => onPageChange(e, page + 1)}
+                  disabled={page >= Math.ceil(count / rowsPerPage) - 1}
+                  aria-label="next page"
+                  sx={{
+                    color: theme.palette.text.secondary,
+                    "&.Mui-disabled": {
+                      opacity: 0.3,
+                    },
+                  }}
+                >
+                  <ChevronRightIcon />
+                </IconButton>
+              </Box>
+            )}
+          />
+        </Paper>
+
+        {/* Action Menu for Edit/Delete */}
+        <Menu
+          id="schedule-actions-menu"
+          anchorEl={anchorEl}
+          open={Boolean(anchorEl)}
+          onClose={handleMenuClose}
+          PaperProps={{
+            elevation: 3,
+            sx: {
+              minWidth: 180,
+              borderRadius: "12px",
+              mt: 1,
+              overflow: "visible",
+              backgroundColor:
+                theme.palette.mode === "dark" ? "#1A1C25" : "#FFFFFF",
+              boxShadow:
+                theme.palette.mode === "dark"
+                  ? "0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.4)"
+                  : "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
+              "&:before": {
+                content: '""',
+                display: "block",
+                position: "absolute",
+                top: 0,
+                right: 14,
+                width: 10,
+                height: 10,
+                bgcolor: theme.palette.mode === "dark" ? "#1A1C25" : "#FFFFFF",
+                transform: "translateY(-50%) rotate(45deg)",
+                zIndex: 0,
+              },
+            },
+          }}
+          transformOrigin={{ horizontal: "right", vertical: "top" }}
+          anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
+        >
+          {/* Edit option */}
+          <MenuItem
+            onClick={() => {
+              if (selectedScheduleId !== null) {
+                const schedule = schedules.find(
+                  (s) => s.scheduleId === selectedScheduleId
+                );
+                if (schedule) {
+                  handleEditSchedule(schedule);
+                }
+              }
+            }}
+            sx={{
+              borderRadius: "8px",
+              mx: 0.5,
+              my: 0.5,
+              transition: "background-color 0.2s",
+              "&:hover": {
+                backgroundColor:
+                  theme.palette.mode === "dark"
+                    ? "rgba(255,255,255,0.1)"
+                    : "rgba(0,0,0,0.06)",
+              },
+            }}
+          >
+            <ListItemIcon sx={{ color: theme.palette.primary.main }}>
+              <EditIcon fontSize="small" />
+            </ListItemIcon>
+            <Typography variant="body2">{t("Edit")}</Typography>
+          </MenuItem>
+
+          {/* Delete option */}
+          <MenuItem
+            onClick={() => {
+              if (selectedScheduleId !== null) {
+                handleConfirmDelete(selectedScheduleId);
+              }
+            }}
+            sx={{
+              borderRadius: "8px",
+              mx: 0.5,
+              my: 0.5,
+              transition: "background-color 0.2s",
+              "&:hover": {
+                backgroundColor:
+                  theme.palette.mode === "dark"
+                    ? "rgba(255,55,55,0.1)"
+                    : "rgba(255,55,55,0.06)",
+              },
+            }}
+          >
+            <ListItemIcon sx={{ color: theme.palette.error.main }}>
+              <DeleteIcon fontSize="small" />
+            </ListItemIcon>
+            <Typography variant="body2">{t("Delete")}</Typography>
+          </MenuItem>
+        </Menu>
+
+        {/* Schedule Form Modal */}
+        <ScheduleModal
+          isOpen={isModalOpen}
+          onClose={closeModal}
+          title={isEditing ? t("Edit Schedule") : t("Create New Schedule")}
+        >
+          <ScheduleForm
+            initialValues={initialFormValues}
+            onSubmit={handleFormSubmit}
+            onCancel={closeModal}
+            isLoading={isLoading}
+            isEditing={isEditing}
+          />
+        </ScheduleModal>
+      </Box>
+    </motion.div>
   );
 };
 

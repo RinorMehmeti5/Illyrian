@@ -3,7 +3,7 @@ import React from "react";
 import { Menu, Transition } from "@headlessui/react";
 import { Fragment } from "react";
 import { UserIcon } from "@heroicons/react/24/outline";
-import useAuthStore from "../../src/store/authStore";
+import useAuthStore from "../../store/authStore";
 
 const AdminHeader: React.FC = () => {
   const { username, logout } = useAuthStore();

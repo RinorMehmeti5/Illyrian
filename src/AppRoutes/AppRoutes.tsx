@@ -5,7 +5,7 @@ import useAuthStore from "../store/authStore";
 
 // Layouts
 import PublicLayout from "../components/layouts/PublicLayout";
-import MaterialAdminLayout from "../components/layouts/MaterialAdminLayout";
+import ModernAdminLayout from "../components/layouts/ModernAdminLayout";
 
 // Public views
 import Home from "../views/Home";
@@ -53,9 +53,9 @@ const AppRoutes: React.FC = () => {
         }
       />
 
-      {/* Admin Routes with Material UI Admin Layout */}
+      {/* Admin Routes with Modern Admin Layout */}
       <Route path="/admin" element={<AdminRoute />}>
-        <Route element={<MaterialAdminLayout />}>
+        <Route element={<ModernAdminLayout />}>
           <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="users" element={<AdminUsers />} />
           <Route path="memeberships" element={<AdminMemberships />} />
